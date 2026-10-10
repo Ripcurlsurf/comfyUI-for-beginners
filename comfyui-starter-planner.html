@@ -1,571 +1,1263 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ComfyUI Starter Planner</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
-<style>
-/* Layout: two-column workbench — settings rail on the left, generated recipe on the right; stacks on phones. Wire colours mirror ComfyUI's data types. */
-:root{
-  --bg:#eef1f4; --panel:#ffffff; --ink:#17202b; --muted:#5a6575; --line:#d6dce4; --soft:#f5f7f9;
-  --accent:#0f766e; --accent-ink:#ffffff; --warn:#a15c07; --warn-bg:#fdf3e2; --ok:#166534;
-  --w-model:#7b6fd0; --w-clip:#b08a12; --w-cond:#d0682c; --w-latent:#c4568b; --w-vae:#c94440; --w-image:#3a7fc8; --w-audio:#2f8a4b; --w-video:#21908c;
-  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#11151b; --panel:#1a2029; --ink:#e7ebf0; --muted:#9ba6b5; --line:#2b3441; --soft:#151a22;
-  --accent:#4fb8ac; --accent-ink:#0b1416; --warn:#f0b35a; --warn-bg:#2a2112; --ok:#6fcf8e;
-  --w-model:#a69cf0; --w-clip:#e3c04a; --w-cond:#f0935a; --w-latent:#ec86b6; --w-vae:#f07a74; --w-image:#72aef0; --w-audio:#68c487; --w-video:#4cc4bf;
-  color-scheme:dark }}
-:root[data-theme="dark"]{
-  --bg:#11151b; --panel:#1a2029; --ink:#e7ebf0; --muted:#9ba6b5; --line:#2b3441; --soft:#151a22;
-  --accent:#4fb8ac; --accent-ink:#0b1416; --warn:#f0b35a; --warn-bg:#2a2112; --ok:#6fcf8e;
-  --w-model:#a69cf0; --w-clip:#e3c04a; --w-cond:#f0935a; --w-latent:#ec86b6; --w-vae:#f07a74; --w-image:#72aef0; --w-audio:#68c487; --w-video:#4cc4bf;
-  color-scheme:dark }
-*{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;padding-inline:16px;padding-block:24px 48px}
-.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
-header h1{font-family:var(--display);font-weight:800;font-size:clamp(1.9rem,4vw,2.8rem);line-height:1.05;margin:0;letter-spacing:-.01em;text-wrap:balance}
-header p{margin:.5rem 0 0;color:var(--muted);max-width:62ch}
-.wires{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
-.wires span{height:4px;width:38px;border-radius:2px}
-.grid{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:24px;align-items:start}
-@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
-.rail{display:flex;flex-direction:column;gap:16px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
-@media (max-width:860px){.rail{position:static}}
-.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.label{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
-h2{font-family:var(--display);font-weight:700;font-size:1.25rem;margin:0;text-wrap:balance}
-.detect{font-family:var(--mono);font-size:.82rem;background:var(--soft);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px}
-.detect dt{color:var(--muted)} .detect dd{margin:0;overflow-wrap:anywhere}
-select,button{font:inherit}
-select{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink)}
-.field{display:flex;flex-direction:column;gap:6px}
-.field label{font-weight:700;font-size:.92rem}
-.media{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.media button{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:12px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:700}
-.media button svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.8}
-.media button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.seg{display:flex;flex-wrap:wrap;gap:6px}
-.seg button{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:.9rem}
-.seg button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent);font-weight:700}
-.toggles{display:flex;flex-direction:column;gap:8px}
-.tog{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
-.tog input{margin-top:4px;accent-color:var(--accent);width:18px;height:18px}
-.tog small{display:block;color:var(--muted)}
-button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.hint{font-size:.85rem;color:var(--muted);margin:0}
-.fit{font-weight:700}.fit.good{color:var(--ok)}.fit.slow{color:var(--warn)}.fit.bad{color:var(--w-vae)}
-/* plan */
-.plan{display:flex;flex-direction:column;gap:18px;min-width:0}
-.summary{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:10px}
-.summary h2{font-size:1.6rem}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font-family:var(--mono);font-size:.75rem;border:1px solid var(--line);border-radius:4px;padding:2px 8px;color:var(--muted)}
-.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700}
-.btn.ghost{background:transparent;color:var(--accent)}
-.progress{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
-.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;flex:1;min-width:120px}
-.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
-.step{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:grid;grid-template-columns:48px minmax(0,1fr);overflow:hidden}
-.step .num{background:var(--soft);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding-top:16px;gap:10px;font-family:var(--display);font-weight:800;font-size:1.3rem;color:var(--muted)}
-.step .num input{width:20px;height:20px;accent-color:var(--accent);cursor:pointer}
-.step.done .num{color:var(--ok)}
-.step .content{padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
-.step h3{margin:0;font-family:var(--display);font-weight:700;font-size:1.15rem;text-wrap:balance}
-.step .tag{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
-.step p,.step ul,.step ol{margin:0;max-width:72ch}
-.step li+li{margin-top:4px}
-code,.mono{font-family:var(--mono);font-size:.84em;background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
-a{color:var(--accent)}
-.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
-table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:520px}
-th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-th{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--soft)}
-tr:last-child td{border-bottom:0}
-td.f{font-family:var(--mono);font-size:.8rem;overflow-wrap:anywhere}
-.size{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)}
-.graph{display:flex;flex-direction:column;gap:6px;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto}
-.link{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.88rem}
-.node{font-family:var(--mono);font-size:.78rem;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap}
-.wire{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:.68rem;font-weight:600;letter-spacing:.04em}
-.wire::before{content:"";width:22px;height:3px;border-radius:2px;background:currentColor}
-.wire::after{content:"▸"}
-.settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.set{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
-.set b{display:block;font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
-.set span{font-variant-numeric:tabular-nums;font-weight:700}
-.note{background:var(--warn-bg);border-left:3px solid var(--warn);padding:10px 12px;border-radius:0 6px 6px 0;font-size:.92rem}
-.note b{color:var(--warn)}
-.prompt{font-family:var(--mono);font-size:.82rem;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:10px 12px;white-space:pre-wrap;overflow-wrap:anywhere}
-.legend{display:flex;flex-wrap:wrap;gap:10px 16px;font-size:.78rem}
-footer{color:var(--muted);font-size:.85rem;max-width:75ch}
-@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
-</style>
+        <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>ComfyUI Starter Planner</title>
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link
+                        rel="stylesheet"
+                        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap"
+                >
+                <style>
+                        /* Layout: two-column workbench — settings rail on the left, generated recipe on the right; stacks on phones. Wire colours mirror ComfyUI's data types. */
+                        :root {
+                                --bg: #eef1f4;
+                                --panel: #ffffff;
+                                --ink: #17202b;
+                                --muted: #5a6575;
+                                --line: #d6dce4;
+                                --soft: #f5f7f9;
+                                --accent: #0f766e;
+                                --accent-ink: #ffffff;
+                                --warn: #a15c07;
+                                --warn-bg: #fdf3e2;
+                                --ok: #166534;
+                                --w-model: #7b6fd0;
+                                --w-clip: #b08a12;
+                                --w-cond: #d0682c;
+                                --w-latent: #c4568b;
+                                --w-vae: #c94440;
+                                --w-image: #3a7fc8;
+                                --w-audio: #2f8a4b;
+                                --w-video: #21908c;
+                                --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+                                --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+                                --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+                        }
 
-</head>
-<body>
-<div class="wrap">
-  <header>
-    <h1>ComfyUI Starter Planner</h1>
-    <p>Pick what you want to make. The planner checks this computer, picks models that will actually fit on it, and writes a step-by-step recipe: what to download, where each file goes, which nodes to connect, the settings to start with, and how to add LoRAs and ControlNet.</p>
-    <div class="wires" aria-hidden="true"><span style="background:var(--w-model)"></span><span style="background:var(--w-clip)"></span><span style="background:var(--w-cond)"></span><span style="background:var(--w-latent)"></span><span style="background:var(--w-vae)"></span><span style="background:var(--w-image)"></span><span style="background:var(--w-video)"></span><span style="background:var(--w-audio)"></span></div>
-  </header>
+                        @media (prefers-color-scheme: dark) {
+                                :root:not([data-theme="light"]) {
+                                        --bg: #11151b;
+                                        --panel: #1a2029;
+                                        --ink: #e7ebf0;
+                                        --muted: #9ba6b5;
+                                        --line: #2b3441;
+                                        --soft: #151a22;
+                                        --accent: #4fb8ac;
+                                        --accent-ink: #0b1416;
+                                        --warn: #f0b35a;
+                                        --warn-bg: #2a2112;
+                                        --ok: #6fcf8e;
+                                        --w-model: #a69cf0;
+                                        --w-clip: #e3c04a;
+                                        --w-cond: #f0935a;
+                                        --w-latent: #ec86b6;
+                                        --w-vae: #f07a74;
+                                        --w-image: #72aef0;
+                                        --w-audio: #68c487;
+                                        --w-video: #4cc4bf;
+                                        color-scheme: dark
+                                }
+                        }
 
-  <div class="grid">
-    <aside class="rail">
-      <section class="box" aria-labelledby="pc-h">
-        <p class="label">Step A</p>
-        <h2 id="pc-h">Your computer</h2>
-        <dl class="detect" id="detect"><dt>Graphics</dt><dd>Checking…</dd></dl>
-        <div class="field">
-          <label for="tier">Graphics card memory (VRAM)</label>
-          <select id="tier"></select>
-        </div>
-        <p class="hint" id="tierHint"></p>
-        <div class="field">
-          <label for="ram">System RAM</label>
-          <select id="ram">
-            <option value="8">8 GB</option><option value="16" selected>16 GB</option><option value="32">32 GB</option><option value="64">64 GB or more</option>
-          </select>
-        </div>
-      </section>
+                        :root[data-theme="dark"] {
+                                --bg: #11151b;
+                                --panel: #1a2029;
+                                --ink: #e7ebf0;
+                                --muted: #9ba6b5;
+                                --line: #2b3441;
+                                --soft: #151a22;
+                                --accent: #4fb8ac;
+                                --accent-ink: #0b1416;
+                                --warn: #f0b35a;
+                                --warn-bg: #2a2112;
+                                --ok: #6fcf8e;
+                                --w-model: #a69cf0;
+                                --w-clip: #e3c04a;
+                                --w-cond: #f0935a;
+                                --w-latent: #ec86b6;
+                                --w-vae: #f07a74;
+                                --w-image: #72aef0;
+                                --w-audio: #68c487;
+                                --w-video: #4cc4bf;
+                                color-scheme: dark
+                        }
 
-      <section class="box" aria-labelledby="what-h">
-        <p class="label">Step B</p>
-        <h2 id="what-h">What do you want to make?</h2>
-        <div class="media" role="group" aria-label="Media type">
-          <button type="button" data-media="image" id="m-image"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/></svg>Image</button>
-          <button type="button" data-media="video" id="m-video"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg>Video</button>
-          <button type="button" data-media="music" id="m-music"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>Music</button>
-        </div>
-        <div class="field">
-          <span class="label" id="modeLbl">Starting point</span>
-          <div class="seg" id="modes" role="group" aria-labelledby="modeLbl"></div>
-        </div>
-        <div class="field" id="modelField">
-          <label for="model">Model</label>
-          <select id="model"></select>
-          <p class="hint" id="fitHint"></p>
-        </div>
-        <div class="toggles">
-          <label class="tog"><input type="checkbox" id="optLora"><span><b>Use a LoRA</b><small>Add a style, character or speed-up file on top of the main model.</small></span></label>
-          <label class="tog"><input type="checkbox" id="optCN"><span><b>Use ControlNet</b><small>Copy the pose, edges or depth from a reference.</small></span></label>
-        </div>
-      </section>
-    </aside>
+                        * {
+                                box-sizing: border-box
+                        }
 
-    <main class="plan" id="plan" aria-live="polite"></main>
-  </div>
+                        body {
+                                background: var(--bg);
+                                color: var(--ink);
+                                font-family: var(--body);
+                                font-size: 16px;
+                                line-height: 1.55;
+                                padding-inline: 16px;
+                                padding-block: 24px 48px
+                        }
 
-  <footer>Model picks reflect what ComfyUI supports natively as of October 2026. Sizes are approximate. Detection reads what your browser reports, which can be vague (Safari says “Apple GPU”, some browsers hide the card name), so check the VRAM choice above matches your machine. On Windows you can confirm in Task Manager → Performance → GPU → “Dedicated GPU memory”.</footer>
-</div>
+                        .wrap {
+                                max-width: 1180px;
+                                margin: 0 auto;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 24px
+                        }
 
-<script>
-(function(){
-const TIERS = {
-  cpu:{label:"No graphics card / Intel or AMD integrated", short:"No GPU"},
-  v6:{label:"4–6 GB (e.g. GTX 1660, RTX 2060, RTX 3050)", short:"≤6 GB"},
-  v8:{label:"8–10 GB (e.g. RTX 3070, 4060, 5060, 3080 10GB)", short:"8 GB"},
-  v12:{label:"12 GB (e.g. RTX 3060 12GB, 4070, 5070)", short:"12 GB"},
-  v16:{label:"16 GB (e.g. RTX 4060 Ti 16GB, 4080, 5070 Ti, 5080)", short:"16 GB"},
-  v24:{label:"24 GB or more (e.g. RTX 3090, 4090, 5090)", short:"24 GB+"},
-  m16:{label:"Apple Silicon Mac, 16 GB or less", short:"Mac ≤16 GB"},
-  m32:{label:"Apple Silicon Mac, 24 GB or more", short:"Mac 24 GB+"}
-};
-const GPU = [
- [/5090/,"v24"],[/4090 laptop/i,"v16"],[/4090/,"v24"],[/3090/,"v24"],[/7900 ?xtx/i,"v24"],[/7900 ?xt/i,"v16"],[/A6000|A5000|RTX 6000|L40/i,"v24"],
- [/4080 laptop/i,"v12"],[/5080 laptop/i,"v16"],[/4080|5080|5070 ti|4070 ti super|7800 ?xt|6800|6900|7900 gre/i,"v16"],
- [/4070 laptop|5070 laptop/i,"v8"],[/4070|5070|3060(?! ti)|3080 ti|2080 ti|7700 ?xt|6700 ?xt|6750/i,"v12"],
- [/3080|3070|3060 ti|4060|5060|2080|2070|1080|1070|7600|6600|a770|a750|b580/i,"v8"],
- [/2060|1660|1650|3050|2050|1060|6500|mx\d/i,"v6"],
- [/apple|m1|m2|m3|m4|m5/i,"m16"],
- [/intel|uhd|iris|radeon\(tm\) graphics|vega|swiftshader|llvmpipe|microsoft basic/i,"cpu"]
-];
+                        header h1 {
+                                font-family: var(--display);
+                                font-weight: 800;
+                                font-size: clamp(1.9rem,4vw,2.8rem);
+                                line-height: 1.05;
+                                margin: 0;
+                                letter-spacing: -.01em;
+                                text-wrap: balance
+                        }
 
-const HF = "https://huggingface.co/";
-const WAN22 = HF+"Comfy-Org/Wan_2.2_ComfyUI_Repackaged/tree/main/split_files";
-const WAN21 = HF+"Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files";
-const UMT5 = {f:"umt5_xxl_fp8_e4m3fn_scaled.safetensors",dir:"text_encoders",url:WAN21+"/text_encoders",size:"6.7 GB",what:"Text encoder (reads your prompt)"};
+                        header p {
+                                margin: .5rem 0 0;
+                                color: var(--muted);
+                                max-width: 62ch
+                        }
 
-/* ---------- IMAGE ---------- */
-const IMG = {
- sd15:{name:"DreamShaper 8", family:"Stable Diffusion 1.5",
-  why:"Small (2 GB) and fast. Runs on almost any graphics card and still gives good all-round results.",
-  files:[{f:"dreamshaper_8.safetensors",dir:"checkpoints",url:"https://civitai.com/models/4384/dreamshaper",size:"2.1 GB",what:"All-in-one checkpoint (model + text encoder + VAE)"}],
-  template:"the default workflow (Workflow → New, it loads automatically) — it is built for this kind of checkpoint",
-  graph:[["Load Checkpoint","MODEL","KSampler"],["Load Checkpoint","CLIP","CLIP Text Encode (positive + negative)"],["CLIP Text Encode","CONDITIONING","KSampler"],["Empty Latent Image","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load Checkpoint","VAE","VAE Decode"],["VAE Decode","IMAGE","Save Image"]],
-  set:{Resolution:"512 × 768",Steps:"25",CFG:"7",Sampler:"dpmpp_2m",Scheduler:"karras",Denoise:"1.0"},
-  neg:true,
-  prompt:"a cosy reading nook by a rainy window, warm lamp light, wooden shelves full of books, soft focus, detailed, 35mm photo",
-  negPrompt:"blurry, low quality, deformed hands, watermark, text",
-  lora:{where:"https://civitai.com/models?baseModels=SD+1.5&types=LORA",filter:"Base model: SD 1.5",node:"Load LoRA",wiring:"Place <b>Load LoRA</b> between <b>Load Checkpoint</b> and the rest: Checkpoint MODEL → LoRA → KSampler, and Checkpoint CLIP → LoRA → both CLIP Text Encode nodes.",strength:"0.6–0.9 for both strength_model and strength_clip"},
-  cn:{files:[{f:"control_v11p_sd15_canny.pth",dir:"controlnet",url:HF+"lllyasviel/ControlNet-v1-1/tree/main",size:"1.4 GB",what:"Edge (Canny) control"},{f:"control_v11f1p_sd15_depth.pth",dir:"controlnet",url:HF+"lllyasviel/ControlNet-v1-1/tree/main",size:"1.4 GB",what:"Depth control"},{f:"control_v11p_sd15_openpose.pth",dir:"controlnet",url:HF+"lllyasviel/ControlNet-v1-1/tree/main",size:"1.4 GB",what:"Pose control"}],
-   how:["Add <b>Load Image</b> and choose your reference picture.","Add a preprocessor: <b>Canny</b> is built in. For depth or pose, install <b>comfyui_controlnet_aux</b> from the Manager and use <b>Depth Anything V2</b> or <b>DWPose Estimator</b>.","Add <b>Load ControlNet Model</b> and pick the matching file (canny file for Canny, and so on).","Add <b>Apply ControlNet</b>. Connect both prompt outputs (positive, negative) into it, the ControlNet model, and the preprocessed IMAGE. Its two outputs go into the KSampler instead.","Start with strength <code>0.8</code>, end_percent <code>0.8</code>. Lower strength = looser copy."]}
- },
- sdxl:{name:"Juggernaut XL", family:"Stable Diffusion XL",
-  why:"The best-supported model family for beginners: thousands of LoRAs, a single ControlNet file that does every control type, and it fits in 8 GB.",
-  files:[{f:"juggernautXL (latest version).safetensors",dir:"checkpoints",url:"https://civitai.com/models/133005/juggernaut-xl",size:"6.6 GB",what:"All-in-one checkpoint"}],
-  template:"the default workflow (Workflow → New); just switch the checkpoint to Juggernaut XL and the size to 1024 × 1024",
-  graph:[["Load Checkpoint","MODEL","KSampler"],["Load Checkpoint","CLIP","CLIP Text Encode (positive + negative)"],["CLIP Text Encode","CONDITIONING","KSampler"],["Empty Latent Image","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load Checkpoint","VAE","VAE Decode"],["VAE Decode","IMAGE","Save Image"]],
-  set:{Resolution:"1024 × 1024 (or 832 × 1216)",Steps:"30",CFG:"5",Sampler:"dpmpp_2m",Scheduler:"karras",Denoise:"1.0"},
-  neg:true,
-  prompt:"a cosy reading nook by a rainy window, warm lamp light, wooden shelves full of books, cinematic photo, shallow depth of field",
-  negPrompt:"blurry, low quality, deformed, watermark, text",
-  lora:{where:"https://civitai.com/models?baseModels=SDXL+1.0&types=LORA",filter:"Base model: SDXL 1.0",node:"Load LoRA",wiring:"Place <b>Load LoRA</b> between <b>Load Checkpoint</b> and the rest: Checkpoint MODEL → LoRA → KSampler, and Checkpoint CLIP → LoRA → both CLIP Text Encode nodes.",strength:"0.6–1.0 for both strengths"},
-  cn:{files:[{f:"diffusion_pytorch_model_promax.safetensors (rename to xinsir_union_promax.safetensors)",dir:"controlnet",url:HF+"xinsir/controlnet-union-sdxl-1.0/tree/main",size:"2.5 GB",what:"Union ControlNet: canny, depth, pose, lineart, scribble, tile in one file"}],
-   how:["Add <b>Load Image</b> and choose your reference picture.","Add a preprocessor: <b>Canny</b> is built in. For depth or pose, install <b>comfyui_controlnet_aux</b> from the Manager and use <b>Depth Anything V2</b> or <b>DWPose Estimator</b>.","Add <b>Load ControlNet Model</b> → <b>SetUnionControlNetType</b> (choose canny/depth/openpose to match your preprocessor).","Add <b>Apply ControlNet</b>. Connect both prompts, the ControlNet and the preprocessed IMAGE. Its positive/negative outputs go into the KSampler.","Start with strength <code>0.7</code>, end_percent <code>0.8</code>."]}
- },
- flux:{name:"FLUX.1 Dev (fp8)", family:"FLUX.1 (Black Forest Labs, 12B)",
-  why:"Very detailed, follows prompts closely, and has one of the biggest LoRA libraries after SDXL. Slower than Z-Image Turbo because it needs about 20 steps.",
-  files:[{f:"flux1-dev-fp8.safetensors",dir:"checkpoints",url:HF+"Comfy-Org/flux1-dev/blob/main/flux1-dev-fp8.safetensors",size:"17 GB",what:"All-in-one checkpoint (model + text encoders + VAE)"}],
-  template:"<b>Flux Dev fp8</b> from Workflow → Browse Templates → Image",
-  graph:[["Load Checkpoint","MODEL","KSampler"],["Load Checkpoint","CLIP","CLIP Text Encode"],["CLIP Text Encode","CONDITIONING","FluxGuidance (3.5)"],["FluxGuidance","CONDITIONING","KSampler (positive)"],["Empty SD3 Latent Image","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load Checkpoint","VAE","VAE Decode"],["VAE Decode","IMAGE","Save Image"]],
-  set:{Resolution:"1024 × 1024",Steps:"20",CFG:"1",Guidance:"3.5 (FluxGuidance node)",Sampler:"euler",Scheduler:"simple"},
-  neg:false,
-  prompt:"A cosy reading nook beside a rain-streaked window at dusk. A brass lamp casts warm light over oak shelves packed with worn paperbacks. A mug of tea steams on the sill. Natural photo, 35mm lens, soft focus background.",
-  lora:{where:"https://civitai.com/models?baseModels=Flux.1+D&types=LORA",filter:"Base model: Flux.1 D",node:"LoraLoaderModelOnly",wiring:"Place <b>Load LoRA</b> right after <b>Load Checkpoint</b>: MODEL and CLIP both pass through it on the way to the KSampler and text encoder. (Many Flux LoRAs only change the model, so <b>LoraLoaderModelOnly</b> also works.)",strength:"0.7–1.0"},
-  cn:{files:[{f:"diffusion_pytorch_model.safetensors (rename to flux_union_pro2.safetensors)",dir:"controlnet",url:HF+"Shakker-Labs/FLUX.1-dev-ControlNet-Union-Pro-2.0/tree/main",size:"4.3 GB",what:"Union ControlNet for Flux: canny, depth, pose, soft edge, grey"}],
-   how:["Add <b>Load Image</b> and choose your reference picture.","Add a preprocessor: <b>Canny</b> is built in; for depth or pose install <b>comfyui_controlnet_aux</b> and use <b>Depth Anything V2</b> or <b>DWPose Estimator</b>.","Add <b>Load ControlNet Model</b> (pick the Flux union file) and <b>Apply ControlNet</b>. Connect the FluxGuidance output as positive, the ControlNet, the VAE and the preprocessed IMAGE.","Start with strength <code>0.7</code> and end_percent <code>0.8</code>; for pose try strength <code>0.9</code>."]}
- },
- zit:{name:"Z-Image Turbo", family:"Z-Image (Alibaba Tongyi, 6B)",
-  why:"Current favourite for beginners with a mid-range or better card: photo-real results in about 8 steps, reads long prompts well and can render text.",
-  files:[{f:"z_image_turbo_bf16.safetensors",dir:"diffusion_models",url:HF+"Comfy-Org/z_image_turbo/blob/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors",size:"12.3 GB",what:"The image model"},{f:"qwen_3_4b.safetensors",dir:"text_encoders",url:HF+"Comfy-Org/z_image_turbo/blob/main/split_files/text_encoders/qwen_3_4b.safetensors",size:"8 GB",what:"Text encoder"},{f:"ae.safetensors",dir:"vae",url:HF+"Comfy-Org/z_image_turbo/blob/main/split_files/vae/ae.safetensors",size:"0.3 GB",what:"VAE (turns latents into pixels)"}],
-  template:"<b>Z-Image Turbo</b> from Workflow → Browse Templates → Image",
-  graph:[["Load Diffusion Model","MODEL","ModelSamplingAuraFlow"],["ModelSamplingAuraFlow","MODEL","KSampler"],["Load CLIP (type: lumina2)","CLIP","CLIP Text Encode"],["CLIP Text Encode","CONDITIONING","KSampler"],["Empty SD3 Latent Image","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load VAE","VAE","VAE Decode"],["VAE Decode","IMAGE","Save Image"]],
-  set:{Resolution:"1024 × 1024",Steps:"8–9",CFG:"1",Sampler:"res_multistep",Scheduler:"simple",Denoise:"1.0"},
-  neg:false,
-  prompt:"A cosy reading nook beside a rain-streaked window at dusk. A brass lamp casts warm light over oak shelves packed with worn paperbacks. A mug of tea steams on the sill. Natural photo, 35mm lens, soft focus background.",
-  lora:{where:"https://civitai.com/search/models?sortBy=models_v9&query=z-image%20turbo%20lora",filter:"Base model: ZImageTurbo",node:"LoraLoaderModelOnly",wiring:"Place <b>LoraLoaderModelOnly</b> between <b>Load Diffusion Model</b> and <b>ModelSamplingAuraFlow</b>.",strength:"0.7–1.0"},
-  cn:{files:[{f:"Z-Image-Turbo-Fun-Controlnet-Union.safetensors",dir:"model_patches",url:HF+"alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union/blob/main/Z-Image-Turbo-Fun-Controlnet-Union.safetensors",size:"3 GB",what:"Union control: canny, HED, depth, pose, MLSD"}],
-   how:["Open the template <b>Z-Image Turbo Fun Union ControlNet</b> (Browse Templates → Image). It is wired for you.","Note the folder: this file goes in <code>models/model_patches</code>, not <code>controlnet</code>.","In <b>Load Image</b>, choose your reference picture. The template runs a preprocessor (e.g. Canny or depth) on it.","Write your prompt and run. If the result copies too strictly, lower the control strength to about <code>0.6</code>."]}
- }
-};
-const IMG_PICK = {cpu:"sd15",v6:"sd15",v8:"sdxl",v12:"zit",v16:"zit",v24:"zit",m16:"sdxl",m32:"zit"};
-const IMG_ALT = {
- cpu:"ComfyUI on a CPU works but is slow: expect 2–10 minutes per image. If you want speed, try Comfy Cloud or a rented GPU and pick the 12 GB plan in this planner.",
- v6:"Want something newer? Z-Image Turbo also comes as small GGUF files (Q4). Install <b>ComfyUI-GGUF</b> from the Manager and search Hugging Face for <a href='https://huggingface.co/models?search=z-image-turbo%20gguf' target='_blank' rel='noopener'>z-image-turbo gguf</a>.",
- v8:"Z-Image Turbo can also run on 8 GB if you have 32 GB of system RAM (ComfyUI moves parts of it to RAM automatically). It is slower but sharper. Pick the 12 GB tier to see that recipe.",
- v12:"For the biggest LoRA library, SDXL (Juggernaut XL) is still a great second model to have. Pick the 8 GB tier to see that recipe.",
- v16:"Once you are comfortable, Qwen-Image (fp8) and FLUX.2 are the next step up. Both have official templates in Browse Templates.",
- v24:"You can also run FLUX.2 dev and Qwen-Image / Qwen-Image-Edit at full quality. Both have official templates in Browse Templates.",
- m16:"Macs run ComfyUI through Apple's Metal backend. It works well but is slower than an NVIDIA card of similar price; keep other apps closed while generating.",
- m32:"Macs run ComfyUI through Apple's Metal backend. Expect roughly 30–90 seconds per image with Z-Image Turbo depending on your chip."
-};
+                        .wires {
+                                display: flex;
+                                gap: 6px;
+                                margin-top: 14px;
+                                flex-wrap: wrap
+                        }
 
-/* ---------- VIDEO ---------- */
-const VID = {
- wan13:{name:"Wan 2.1 1.3B", family:"Wan 2.1 (small)",
-  why:"The smallest good video model. Makes short 480p clips on cards with as little as 6–8 GB.",
-  files:[{f:"wan2.1_t2v_1.3B_fp16.safetensors",dir:"diffusion_models",url:WAN21+"/diffusion_models",size:"2.8 GB",what:"Video model (text-to-video)"},UMT5,{f:"wan_2.1_vae.safetensors",dir:"vae",url:WAN21+"/vae",size:"0.25 GB",what:"VAE"}],
-  i2vSwap:{f:"wan2.1_vace_1.3B_fp16.safetensors",dir:"diffusion_models",url:WAN21+"/diffusion_models",size:"4 GB",what:"VACE model — lets the 1.3B model start from your picture"},
-  template:"<b>Wan 2.1 Text to Video</b> (Browse Templates → Video). For a starting picture use <b>Wan VACE Reference to Video</b>",
-  graph:[["Load Diffusion Model","MODEL","ModelSamplingSD3 (shift 8)"],["ModelSamplingSD3","MODEL","KSampler"],["Load CLIP (type: wan)","CLIP","CLIP Text Encode (positive + negative)"],["CLIP Text Encode","CONDITIONING","KSampler"],["Empty Hunyuan Latent Video","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load VAE","VAE","VAE Decode"],["VAE Decode","IMAGE","Create Video → Save Video"]],
-  set:{Resolution:"832 × 480",Frames:"33 (≈2 s)",FPS:"16",Steps:"30",CFG:"6",Sampler:"uni_pc / simple"},
-  i2vNote:"The 1.3B model cannot take a picture directly. Use the VACE 1.3B file instead: the <b>WanVaceToVideo</b> node has a <code>reference_image</code> input where you plug in <b>Load Image</b>.",
-  prompt:"A slow dolly shot through a rainy neon alley at night, puddles reflecting pink and blue signs, steam rising from a vent, cinematic, shallow depth of field",
-  negPrompt:"blurry, static, low quality, jpeg artifacts, watermark",
-  cnPick:"vace13"
- },
- wan5b:{name:"Wan 2.2 5B", family:"Wan 2.2 TI2V",
-  why:"One model that does both text-to-video and image-to-video at up to 720p. Built to fit consumer cards.",
-  files:[{f:"wan2.2_ti2v_5B_fp16.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"10 GB",what:"Video model (text or image to video)"},UMT5,{f:"wan2.2_vae.safetensors",dir:"vae",url:WAN22+"/vae",size:"1.4 GB",what:"VAE (Wan 2.2 version — the 2.1 VAE will not work here)"}],
-  template:"<b>Wan 2.2 5B Video Generation</b> (Browse Templates → Video)",
-  graph:[["Load Diffusion Model","MODEL","ModelSamplingSD3 (shift 8)"],["ModelSamplingSD3","MODEL","KSampler"],["Load CLIP (type: wan)","CLIP","CLIP Text Encode (positive + negative)"],["CLIP Text Encode","CONDITIONING","KSampler"],["Load Image (optional start frame)","IMAGE","Wan22ImageToVideoLatent"],["Wan22ImageToVideoLatent","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load VAE","VAE","VAE Decode + Wan22ImageToVideoLatent"],["VAE Decode","IMAGE","Create Video → Save Video"]],
-  set:{Resolution:"1280 × 704",Frames:"121 (≈5 s)",FPS:"24",Steps:"20",CFG:"5",Sampler:"uni_pc / simple"},
-  lowSet:{Resolution:"832 × 480",Frames:"49 (≈2 s)"},
-  i2vNote:"Connect <b>Load Image</b> to the <code>start_image</code> input of <b>Wan22ImageToVideoLatent</b>. Leave it unconnected for text-to-video.",
-  prompt:"A slow dolly shot through a rainy neon alley at night, puddles reflecting pink and blue signs, steam rising from a vent, cinematic, shallow depth of field",
-  negPrompt:"blurry, static, low quality, jpeg artifacts, watermark",
-  cnPick:"vace13"
- },
- wan14:{name:"Wan 2.2 14B", family:"Wan 2.2 A14B (two-stage)",
-  why:"The highest-quality open video model with full ComfyUI support. Uses two models in turn: a ‘high noise’ model for layout and motion, then a ‘low noise’ model for detail.",
-  files:[{f:"wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Stage 1 model (text-to-video)"},{f:"wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Stage 2 model (text-to-video)"},UMT5,{f:"wan_2.1_vae.safetensors",dir:"vae",url:WAN21+"/vae",size:"0.25 GB",what:"VAE (14B uses the 2.1 VAE)"}],
-  i2vFiles:[{f:"wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Stage 1 model (image-to-video)"},{f:"wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Stage 2 model (image-to-video)"}],
-  template:"<b>Wan 2.2 14B Text to Video</b> or <b>Wan 2.2 14B Image to Video</b> (Browse Templates → Video)",
-  graph:[["Load Diffusion Model (high noise)","MODEL","KSampler (Advanced) #1"],["Load Diffusion Model (low noise)","MODEL","KSampler (Advanced) #2"],["Load CLIP (type: wan)","CLIP","CLIP Text Encode (positive + negative)"],["CLIP Text Encode","CONDITIONING","both KSamplers"],["Empty latent / WanImageToVideo","LATENT","KSampler (Advanced) #1"],["KSampler #1","LATENT","KSampler (Advanced) #2"],["KSampler #2","LATENT","VAE Decode"],["Load VAE","VAE","VAE Decode"],["VAE Decode","IMAGE","Create Video → Save Video"]],
-  set:{Resolution:"1280 × 720",Frames:"81 (≈5 s)",FPS:"16",Steps:"20 (10 + 10)",CFG:"3.5",Sampler:"euler / simple"},
-  midSet:{Resolution:"832 × 480"},
-  i2vNote:"Use the I2V files and template. Plug <b>Load Image</b> into the <code>start_image</code> input of <b>WanImageToVideo</b>.",
-  prompt:"A slow dolly shot through a rainy neon alley at night, puddles reflecting pink and blue signs, steam rising from a vent, cinematic, shallow depth of field",
-  negPrompt:"blurry, static, low quality, jpeg artifacts, watermark",
-  cnPick:"fun14"
- }
-};
-const VID_PICK = {cpu:"cloud",v6:"wan13",v8:"wan5b",v12:"wan5b",v16:"wan14",v24:"wan14",m16:"wan13",m32:"wan5b"};
-const VID_CN = {
- vace13:{name:"Wan VACE 1.3B",files:[{f:"wan2.1_vace_1.3B_fp16.safetensors",dir:"diffusion_models",url:WAN21+"/diffusion_models",size:"4 GB",what:"VACE: video model that follows a control video"},UMT5,{f:"wan_2.1_vae.safetensors",dir:"vae",url:WAN21+"/vae",size:"0.25 GB",what:"VAE"}],
-  how:["Open the template <b>Wan VACE Control Video</b> (Browse Templates → Video) and switch the model to the 1.3B file.","Load a short reference clip with <b>Load Video</b> (a person dancing, a camera move, etc.).","Turn it into a control video: install <b>comfyui_controlnet_aux</b> from the Manager, then run the frames through <b>DWPose Estimator</b> (copies body movement) or <b>Depth Anything V2</b> (copies shapes and camera motion).","Plug the result into the <code>control_video</code> input of <b>WanVaceToVideo</b>. Optionally add a <code>reference_image</code> to set the look of the character.","Match the frame count and size of the control video to your settings (832 × 480, 33–81 frames). Set strength to <code>1.0</code>."]},
- fun14:{name:"Wan 2.2 Fun Control 14B",files:[{f:"wan2.2_fun_control_high_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Control model, stage 1"},{f:"wan2.2_fun_control_low_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Control model, stage 2"}],
-  how:["Open the template <b>Wan 2.2 14B Fun Control</b> (Browse Templates → Video). If any file is missing, the Desktop app offers to download it.","Load a reference clip with <b>Load Video</b>.","Make a control video from it: install <b>comfyui_controlnet_aux</b>, then use <b>DWPose Estimator</b> for movement, <b>Canny</b> for outlines, or <b>Depth Anything V2</b> for shape and camera motion.","Plug the control video into <b>Wan22FunControlToVideo</b>, and optionally a start image to set the look.","Keep resolution and frame count the same as your control clip."]}
-};
+                        .wires span {
+                                height: 4px;
+                                width: 38px;
+                                border-radius: 2px
+                        }
 
-/* ---------- MUSIC ---------- */
-const MUS = {name:"ACE-Step 1.5 Turbo", family:"ACE-Step 1.5",
- why:"Makes full songs with vocals and lyrics, or instrumentals, from a list of style tags. Very fast: under 10 seconds for a 4-minute song on an RTX 3090.",
- files:[{f:"ace_step_1.5_turbo_aio.safetensors",dir:"checkpoints",url:HF+"Comfy-Org/ace_step_1.5_ComfyUI_files/blob/main/checkpoints/ace_step_1.5_turbo_aio.safetensors",size:"",what:"All-in-one (model + text encoder + VAE)"}],
- splitFiles:[{f:"acestep_v1.5_turbo.safetensors",dir:"diffusion_models",url:HF+"Comfy-Org/ace_step_1.5_ComfyUI_files/blob/main/split_files/diffusion_models/acestep_v1.5_turbo.safetensors",size:"",what:"Music model"},{f:"qwen_0.6b_ace15.safetensors",dir:"text_encoders",url:HF+"Comfy-Org/ace_step_1.5_ComfyUI_files/blob/main/split_files/text_encoders/qwen_0.6b_ace15.safetensors",size:"",what:"Small text encoder (use this one on low memory)"},{f:"ace_1.5_vae.safetensors",dir:"vae",url:HF+"Comfy-Org/ace_step_1.5_ComfyUI_files/blob/main/split_files/vae/ace_1.5_vae.safetensors",size:"",what:"Audio VAE"}],
- template:"<b>ACE-Step 1.5 Music Generation AIO</b> (Browse Templates → Audio)",
- splitTemplate:"<b>ACE-Step 1.5 Music Generation Workflow</b> (the split-file version, Browse Templates → Audio)",
- graph:[["Load Checkpoint","MODEL","KSampler"],["Load Checkpoint","CLIP","Text Encode (tags + lyrics)"],["Text Encode","CONDITIONING","KSampler"],["Empty latent audio (set seconds)","LATENT","KSampler"],["KSampler","LATENT","VAE Decode Audio"],["Load Checkpoint","VAE","VAE Decode Audio"],["VAE Decode Audio","AUDIO","Save Audio"]],
- set:{Length:"30–120 s to start",Steps:"Template default (turbo ≈ 8)",CFG:"Template default",Seed:"Change it for a new take"}
-};
+                        .grid {
+                                display: grid;
+                                grid-template-columns: minmax(0,360px) minmax(0,1fr);
+                                gap: 24px;
+                                align-items: start
+                        }
 
-/* ---------- model fit ---------- */
-const RANK={cpu:0,v6:1,v8:2,m16:2,v12:3,m32:3,v16:4,v24:5};
-const NEED={image:{sd15:0,sdxl:2,zit:3,flux:4},video:{wan13:1,wan5b:2,wan14:4}};
-const ORDER={image:["sd15","sdxl","zit","flux"],video:["wan13","wan5b","wan14"]};
-function fitOf(media,key){
-  const r=RANK[S.tier], n=NEED[media][key];
-  if(r>=n) return {cls:"good",txt:"Fits well"};
-  if(r===n-1) return {cls:"slow",txt:"Runs, but slowly (borrows system RAM)"};
-  return {cls:"bad",txt:"Probably too big for this computer"};
-}
-function chosenKey(){
-  if(S.media==="image") return S.imgModel==="auto"?IMG_PICK[S.tier]:S.imgModel;
-  if(S.media==="video") return S.vidModel==="auto"?VID_PICK[S.tier]:S.vidModel;
-  return null;
-}
-function fitNote(media,key){
-  const f=fitOf(media,key); if(f.cls==="good") return "";
-  const ramTip=parseInt(S.ram)<32?" With your RAM setting it may fail; 32 GB or more of system RAM helps a lot.":"";
-  return f.cls==="slow"
-    ? `<b>Heads up:</b> this model is a little big for ${TIERS[S.tier].short}. ComfyUI will move part of it into system RAM, so expect it to be 2–4× slower. Use the smallest settings first.${ramTip}`
-    : `<b>Heads up:</b> this model normally needs a lot more memory than ${TIERS[S.tier].short}. It will probably run out of memory or take a very long time. Look for a smaller GGUF version (install <b>ComfyUI-GGUF</b> from the Manager), or use a cloud GPU.${ramTip}`;
-}
+                        @media (max-width:860px) {
+                                .grid {
+                                        grid-template-columns: minmax(0,1fr)
+                                }
+                        }
 
-/* ---------- state ---------- */
-const MODES = {image:[["t2i","Text → image"],["i2i","Edit my picture"]],video:[["t2v","Text → video"],["i2v","Animate my picture"]],music:[["song","Song with vocals"],["inst","Instrumental"]]};
-let S = {media:"image",mode:"t2i",tier:"v8",ram:"16",lora:false,cn:false,imgModel:"auto",vidModel:"auto"};
-const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-let detected = {gpu:"",tier:null,os:"",cores:navigator.hardwareConcurrency||"?",mem:navigator.deviceMemory};
+                        .rail {
+                                display: flex;
+                                flex-direction: column;
+                                gap: 16px;
+                                position: sticky;
+                                top: calc(env(safe-area-inset-top,0px) + 12px)
+                        }
 
-function detect(){
-  let r="";
-  try{const c=document.createElement("canvas");const gl=c.getContext("webgl")||c.getContext("experimental-webgl");
-    if(gl){const ext=gl.getExtension("WEBGL_debug_renderer_info");r=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);}}catch(e){}
-  let clean=r;
-  const m=/ANGLE \(([^,]+),\s*([^(]+?)(?:\s*\(0x[0-9a-f]+\))?\s*(?:Direct3D|OpenGL|Vulkan|Metal|,|\))/i.exec(r);
-  if(m) clean=m[2].trim();
-  detected.gpu=clean||"Not reported by this browser";
-  const ua=navigator.userAgent;
-  const p=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||"";
-  detected.os=/win/i.test(p)||/Windows/.test(ua)?"Windows":/mac/i.test(p)||/Mac OS/.test(ua)?"macOS":/linux/i.test(p)?"Linux":/iPhone|iPad|Android/.test(ua)?"Mobile":"Unknown";
-  for(const [re,t] of GPU){ if(re.test(clean)){detected.tier=t;break;} }
-  if(!detected.tier && detected.os==="macOS" && /apple/i.test(r)) detected.tier="m16";
-  if(detected.os==="Mobile") detected.tier=null;
-}
-function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+                        @media (max-width:860px) {
+                                .rail {
+                                        position: static
+                                }
+                        }
 
-function renderDetect(){
-  const d=document.getElementById("detect");
-  const mem=detected.mem?(detected.mem>=8?"8 GB or more (browsers cap this at 8)":detected.mem+" GB"):"Not reported";
-  d.innerHTML=`<dt>Graphics</dt><dd>${esc(detected.gpu)}</dd><dt>System</dt><dd>${esc(detected.os)}</dd><dt>CPU threads</dt><dd>${esc(detected.cores)}</dd><dt>RAM</dt><dd>${esc(mem)}</dd>`;
-  const h=document.getElementById("tierHint");
-  if(detected.os==="Mobile") h.textContent="You're on a phone or tablet. ComfyUI runs on a desktop or laptop, so choose that computer's graphics card below.";
-  else if(detected.tier) h.innerHTML=`Best guess from your graphics card: <b>${TIERS[detected.tier].short}</b>. Change it if that's wrong (some cards come in two memory sizes).`;
-  else h.textContent="Couldn't recognise the graphics card. Choose the closest option below.";
-}
+                        .box {
+                                background: var(--panel);
+                                border: 1px solid var(--line);
+                                border-radius: 10px;
+                                padding: 18px;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 12px;
+                                min-width: 0
+                        }
 
-function wireColor(t){return {MODEL:"--w-model",CLIP:"--w-clip",CONDITIONING:"--w-cond",LATENT:"--w-latent",VAE:"--w-vae",IMAGE:"--w-image",AUDIO:"--w-audio",VIDEO:"--w-video"}[t]||"--muted"}
-function graphHTML(g){
-  return `<div class="graph" role="list">${g.map(([a,t,b])=>`<div class="link" role="listitem"><span class="node">${esc(a)}</span><span class="wire" style="color:var(${wireColor(t)})">${t}</span><span class="node">${esc(b)}</span></div>`).join("")}</div>`;
-}
-function filesHTML(files){
-  return `<div class="tablewrap"><table><thead><tr><th>File</th><th>Put it in</th><th>What it is</th><th>Size</th><th>Download</th></tr></thead><tbody>${files.map(x=>`<tr><td class="f">${esc(x.f)}</td><td class="f">ComfyUI/models/${esc(x.dir)}/</td><td>${esc(x.what)}</td><td class="size">${x.size||"—"}</td><td><a href="${x.url}" target="_blank" rel="noopener">Open</a></td></tr>`).join("")}</tbody></table></div>`;
-}
-function setHTML(s){return `<div class="settings">${Object.entries(s).map(([k,v])=>`<div class="set"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join("")}</div>`}
-function ul(a){return `<ul>${a.map(x=>`<li>${x}</li>`).join("")}</ul>`}
-function ol(a){return `<ol>${a.map(x=>`<li>${x}</li>`).join("")}</ol>`}
+                        .label {
+                                font-family: var(--mono);
+                                font-size: .72rem;
+                                letter-spacing: .08em;
+                                text-transform: uppercase;
+                                color: var(--muted);
+                                margin: 0
+                        }
 
-/* ---------- install step ---------- */
-function installStep(){
-  const t=S.tier; const mac=t[0]==="m";
-  const amd=/radeon|amd|rx ?\d/i.test(detected.gpu)&&!mac&&t!=="cpu";
-  let items=[];
-  if(mac){
-    items=["Download <b>ComfyUI Desktop for macOS</b> from <a href='https://www.comfy.org/download' target='_blank' rel='noopener'>comfy.org/download</a> (Apple Silicon M1 or newer).","Drag it to Applications, open it, and let it finish the first-run setup. It installs Python and everything else for you.","Choose a folder with plenty of free space for models. Plan for <b>50 GB or more</b>."];
-  } else if(detected.os==="Linux"){
-    items=["Install with git: <code>git clone https://github.com/comfyanonymous/ComfyUI</code>, then follow the README to install PyTorch for your card and run <code>python main.py</code>.","Open <code>http://127.0.0.1:8188</code> in your browser.","Install <b>ComfyUI-Manager</b> (instructions in the ComfyUI README) so you can add custom nodes with one click."];
-  } else {
-    items=["Download <b>ComfyUI Desktop for Windows</b> from <a href='https://www.comfy.org/download' target='_blank' rel='noopener'>comfy.org/download</a> and run the installer.","When asked, pick your GPU type and a folder with plenty of space. Plan for <b>50 GB or more</b> for models.","The Desktop app includes the <b>Manager</b> (the button that installs custom nodes and missing models). If you prefer the Portable zip version, it is on the same page."];
-    if(t==="cpu") items.push("Choose <b>CPU</b> mode during setup. It works, but every job will be slow.");
-  }
-  if(amd) items.push("AMD card: ComfyUI's AMD support depends on your card and operating system. Check the AMD notes on the download page; Linux with ROCm is the most reliable route.");
-  items.push("Learn three moves: <b>double-click</b> empty canvas to search for a node, <b>drag</b> from a coloured dot to connect a wire, and press <b>Run</b> (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>).");
-  return {tag:"Setup",title:"Install ComfyUI",body:ol(items)};
-}
+                        h2 {
+                                font-family: var(--display);
+                                font-weight: 700;
+                                font-size: 1.25rem;
+                                margin: 0;
+                                text-wrap: balance
+                        }
 
-/* ---------- builders ---------- */
-function buildImage(){
-  const key=chosenKey(); const m=IMG[key]; const steps=[]; const manual=S.imgModel!=="auto";
-  let files=[...m.files];
-  steps.push(installStep());
-  steps.push({tag:"Download",title:`Download ${m.name}`,body:`<p>${m.why}</p>${filesHTML(files)}<p class="hint">Civitai pages: click the <b>Download</b> button on the model page and save the <code>.safetensors</code> file. On Hugging Face, click the file then the download arrow. Restart ComfyUI or press <b>R</b> to refresh after adding files.</p>`});
-  steps.push({tag:"Load",title:"Open the starter workflow",body:`<p>Use ${m.template}. In ComfyUI Desktop, templates can also download any missing model files for you.</p>`});
-  let g=[...m.graph];
-  if(S.mode==="i2i"){ g=g.map(r=>r[0].startsWith("Empty")?["Load Image → VAE Encode","LATENT","KSampler"]:r); }
-  steps.push({tag:"Build",title:"Check how the nodes connect",body:`<p>Every wire carries one type of data. Colours match the dots in ComfyUI, and a wire only connects to an input of the same colour.</p>${graphHTML(g)}${S.mode==="i2i"?`<p>To edit your own picture: delete <b>${m.graph.find(r=>r[0].startsWith("Empty"))[0]}</b>, add <b>Load Image</b> → <b>VAE Encode</b> (connect the VAE too), and plug its LATENT into the KSampler.</p>`:""}`});
-  const set={...m.set}; if(S.mode==="i2i") set.Denoise="0.5–0.65";
-  steps.push({tag:"Settings",title:"Set the starting values",body:`${setHTML(set)}${S.mode==="i2i"?"<p>Denoise is how much the picture can change. 0.3 = small touch-ups, 0.7 = big changes, 1.0 = ignores your picture.</p>":""}`});
-  steps.push({tag:"Prompt",title:"Write your prompt",body:`<p>Describe the subject, the setting, the light and the camera or art style. ${m.neg?"Put things you don't want in the second (negative) prompt.":"This model ignores the negative prompt at CFG 1, so put everything in the positive prompt and write full sentences."}</p><div class="prompt">${esc(m.prompt)}</div>${m.neg?`<p class="label">Negative</p><div class="prompt">${esc(m.negPrompt)}</div>`:""}`});
-  if(S.lora){ const l=m.lora; steps.push({tag:"LoRA",title:"Add a LoRA",body:ol([`Find one on <a href="${l.where}" target="_blank" rel="noopener">Civitai</a> (already filtered to <b>${l.filter}</b>). A LoRA must match the base model or it won't work. Also check <a href="https://huggingface.co/models?other=lora" target="_blank" rel="noopener">Hugging Face</a>.`,`Save the <code>.safetensors</code> file into <code>ComfyUI/models/loras/</code>.`,l.wiring,`Set strength to <b>${l.strength}</b>. Too high and images get distorted.`,"Read the LoRA's page for its <b>trigger words</b> and add them to your prompt.","To stack two LoRAs, chain a second loader after the first and lower both strengths a little."])}); }
-  if(S.cn){ const c=m.cn; steps.push({tag:"ControlNet",title:"Add ControlNet",body:`<p>ControlNet copies structure from a reference picture (edges, depth or a body pose) while your prompt sets the content and style.</p>${filesHTML(c.files)}${ol(c.how)}`}); }
-  steps.push({tag:"Run",title:"Run and save",body:ul(["Press <b>Run</b>. Finished images save to <code>ComfyUI/output/</code>.","Change the <b>seed</b> for a new variation; set <code>control_after_generate</code> to <b>fixed</b> to keep one you like while you tweak the prompt.","Drag any PNG made by ComfyUI back onto the canvas: it reloads the whole workflow that made it."])});
-  steps.push(troubleshoot("image"));
-  return {title:`${m.name} on ${TIERS[S.tier].short}`,family:m.family,steps,alt:manual?"":IMG_ALT[S.tier],warn:fitNote("image",key),picked:manual,why:m.why};
-}
+                        .detect {
+                                font-family: var(--mono);
+                                font-size: .82rem;
+                                background: var(--soft);
+                                border: 1px dashed var(--line);
+                                border-radius: 8px;
+                                padding: 10px 12px;
+                                display: grid;
+                                grid-template-columns: auto minmax(0,1fr);
+                                gap: 4px 12px
+                        }
 
-function buildVideo(){
-  const key=chosenKey(); const steps=[]; const manual=S.vidModel!=="auto";
-  if(key==="cloud"){
-    steps.push({tag:"Read first",title:"Video needs a graphics card",body:`<p>Video models do billions of calculations per frame. Without a dedicated GPU, a 2-second clip can take hours or fail. Two good routes:</p>${ul(["<b>Comfy Cloud</b> or a rented GPU (RunPod, Vast.ai, and similar) running ComfyUI. Pick a 24 GB card and follow the 24 GB recipe in this planner.","Make images on this computer first (choose Image above), then animate them later on a GPU machine."])}`});
-    const v=VID.wan13; steps.push({tag:"If you try anyway",title:"Smallest model to try",body:`<p>${v.name}, 832 × 480, 17 frames. Expect a very long wait.</p>${filesHTML(v.files)}`});
-    return {title:"Video on a computer without a GPU",family:"Cloud recommended",steps,alt:"",why:""};
-  }
-  const v=VID[key]; let files=[...v.files];
-  if(S.mode==="i2v"&&v.i2vFiles) files=[...v.i2vFiles,...files.slice(2)];
-  if(S.mode==="i2v"&&v.i2vSwap) files=[v.i2vSwap,...files.slice(1)];
-  steps.push(installStep());
-  steps.push({tag:"Download",title:`Download ${v.name}`,body:`<p>${v.why}</p>${filesHTML(files)}<p class="hint">The Hugging Face links open the folder; click the exact file name, then the download arrow.</p>`});
-  steps.push({tag:"Load",title:"Open the starter workflow",body:`<p>Use ${v.template}.</p>`});
-  steps.push({tag:"Build",title:"Check how the nodes connect",body:`${graphHTML(v.graph)}${S.mode==="i2v"?`<p>${v.i2vNote}</p>`:""}`});
-  let set={...v.set};
-  if(key==="wan5b"&&RANK[S.tier]<=2) Object.assign(set,v.lowSet);
-  if(key==="wan14"&&RANK[S.tier]<=4) Object.assign(set,v.midSet);
-  if(S.tier==="m16"||S.tier==="m32") set.Frames="33 (≈2 s) to start";
-  if(key==="wan14"&&S.lora){ set.Steps="4 (2 + 2) with LightX2V"; set.CFG="1"; }
-  steps.push({tag:"Settings",title:"Set the starting values",body:`${setHTML(set)}<p>Frame counts for Wan must be a multiple of 4 plus 1 (17, 33, 49, 81, 121). Make your first test short; double the length once it works.</p>${key==="wan14"?"<p>For the two KSampler (Advanced) nodes: #1 runs steps 0→10 with <code>add_noise</code> enabled and <code>return_with_leftover_noise</code> enabled; #2 runs steps 10→20 with both disabled. The template already sets this.</p>":""}`});
-  steps.push({tag:"Prompt",title:"Write your prompt",body:`<p>Describe the scene <b>and</b> the movement: what moves, how the camera moves, the pace. ${S.mode==="i2v"?"For image-to-video, focus on motion; the picture already sets the look.":""}</p><div class="prompt">${esc(v.prompt)}</div><p class="label">Negative</p><div class="prompt">${esc(v.negPrompt)}</div>`});
-  if(S.lora){
-    const lb=[];
-    if(key==="wan14") lb.push(`<b>Speed LoRA (recommended):</b> LightX2V 4-step LoRAs cut generation time by about 5×. Get the high-noise and low-noise versions that match your mode (T2V or I2V) from <a href="${WAN22}/loras" target="_blank" rel="noopener">Comfy-Org's Wan 2.2 loras folder</a>. Put each one on a <b>LoraLoaderModelOnly</b> after its matching model (high → high, low → low), strength <code>1.0</code>.`);
-    lb.push(`<b>Style or motion LoRAs:</b> browse <a href="https://civitai.com/search/models?sortBy=models_v9&query=wan" target="_blank" rel="noopener">Civitai</a> and filter the base model to <b>${key==="wan13"?"Wan Video 1.3B":key==="wan5b"?"Wan Video 2.2 TI2V-5B":"Wan Video 2.2 T2V-A14B or I2V-A14B"}</b>.${key==="wan5b"?" There are fewer LoRAs for the 5B model than for 14B.":""}`);
-    lb.push("Save files into <code>ComfyUI/models/loras/</code>, then add <b>LoraLoaderModelOnly</b> between <b>Load Diffusion Model</b> and <b>ModelSamplingSD3</b>.");
-    lb.push("Start at strength <code>0.8–1.0</code> and use the trigger words from the LoRA's page.");
-    steps.push({tag:"LoRA",title:"Add a LoRA",body:ol(lb)});
-  }
-  if(S.cn){
-    const c=VID_CN[v.cnPick];
-    steps.push({tag:"ControlNet",title:`Control the motion with ${c.name}`,body:`<p>Video models use their own control models instead of image ControlNets. They follow a <b>control video</b>: a pose skeleton, depth map or outline made from a reference clip.</p>${filesHTML(c.files)}${ol(c.how)}`});
-  }
-  steps.push({tag:"Run",title:"Run and save",body:ul(["Press <b>Run</b>. Videos save to <code>ComfyUI/output/</code> as MP4.","First run is slow because models load into memory. The second run is faster.",S.tier==="v8"||S.tier==="v6"||S.tier==="m16"?"If it's slow, close games, browsers with video, and other GPU apps while generating.":"Keep a short preview size until you like the motion, then raise resolution."])});
-  steps.push(troubleshoot("video"));
-  const alt={v6:"With 32 GB+ of system RAM you can also try Wan 2.2 5B; ComfyUI offloads what doesn't fit, at the cost of speed.",v8:"Want the 14B quality? Search Hugging Face for Wan 2.2 14B GGUF (Q3/Q4) files and install ComfyUI-GGUF from the Manager. It needs 32 GB+ system RAM.",v12:"Want 14B quality? Wan 2.2 14B in GGUF Q4 form plus the LightX2V 4-step LoRA runs on 12 GB with 32–64 GB system RAM.",v16:"16 GB runs 14B fp8 by offloading part of the model to system RAM. 64 GB of RAM is strongly recommended; with 32 GB, use 832 × 480.",v24:"You can also run LTX-2 and HunyuanVideo 1.5 from the templates if you want to compare.",m16:"Macs are slow at video. Keep clips short and small, or use a cloud GPU for longer clips.",m32:"Expect several minutes per 5-second clip on Apple Silicon."}[S.tier]||"";
-  return {title:`${v.name} on ${TIERS[S.tier].short}`,family:v.family,steps,alt:manual?"":alt,warn:fitNote("video",key),picked:manual,why:v.why};
-}
+                        .detect dt {
+                                color: var(--muted)
+                        }
 
-function buildMusic(){
-  const steps=[]; const small=S.tier==="v6"||S.tier==="cpu"||S.tier==="m16";
-  steps.push(installStep());
-  steps.push({tag:"Download",title:`Download ${MUS.name}`,body:`<p>${MUS.why}</p>${filesHTML(small?MUS.splitFiles:MUS.files)}${small?"<p class='hint'>On your machine, use the split files with the small 0.6B text encoder. It needs less memory than the all-in-one file.</p>":"<p class='hint'>One file does everything. If you run low on memory later, the split files with the 0.6B text encoder are lighter.</p>"}`});
-  steps.push({tag:"Load",title:"Open the starter workflow",body:`<p>Use ${small?MUS.splitTemplate:MUS.template}.</p>`});
-  steps.push({tag:"Build",title:"Check how the nodes connect",body:graphHTML(MUS.graph)});
-  steps.push({tag:"Settings",title:"Set the starting values",body:setHTML(MUS.set)});
-  const lyr=S.mode==="song"?"[verse]\nStreetlights hum on an empty road\nI count the miles that I still owe\n\n[chorus]\nTake me home, take me slow\nThrough the rain and the radio":"[instrumental]";
-  steps.push({tag:"Prompt",title:S.mode==="song"?"Write tags and lyrics":"Write tags for an instrumental",body:`<p>The <b>tags</b> box takes a comma-separated description: genre, instruments, mood, voice, tempo and key.</p><div class="prompt">${S.mode==="song"?"indie pop, female vocals, warm analog synths, jangly guitar, nostalgic, 104 bpm, A minor":"lo-fi hip hop, mellow electric piano, vinyl crackle, soft boom-bap drums, rainy night, 80 bpm"}</div><p>The <b>lyrics</b> box uses section labels in square brackets: <code>[verse]</code>, <code>[chorus]</code>, <code>[bridge]</code>, <code>[outro]</code>.${S.mode==="inst"?" For no vocals, use <code>[instrumental]</code> or leave it empty.":""}</p><div class="prompt">${esc(lyr)}</div><p>Write your own lyrics: don't paste lyrics from existing songs.</p>`});
-  if(S.lora){ steps.push({tag:"LoRA",title:"Add a LoRA",body:ol(["Music LoRAs change genre or vocal style. Search <a href='https://huggingface.co/models?search=ace-step%20lora' target='_blank' rel='noopener'>Hugging Face for ACE-Step LoRAs</a> and check they are made for <b>ACE-Step 1.5</b>. LoRAs for version 1.0 won't match.","Save the file into <code>ComfyUI/models/loras/</code>.","Add <b>LoraLoaderModelOnly</b> between the model loader and the KSampler.","Start at strength <code>0.7</code> and add the LoRA's suggested tags.","ACE-Step 1.5 can also train your own LoRA inside ComfyUI from a handful of tracks you own the rights to."])}); }
-  if(S.cn){ steps.push({tag:"ControlNet",title:"Steering music without ControlNet",body:`<p>ControlNet is for pictures and video; there's no ControlNet for music models. You steer ACE-Step with these instead:</p>${ul(["<b>Tempo and key</b> in the tags (<code>92 bpm</code>, <code>D major</code>) hold the song to a groove.","<b>Section labels</b> in the lyrics set the structure: where the chorus lands, where a bridge goes.","<b>Fixed seed</b>: keep the seed and change one tag at a time to hear what each word does.","<b>Length</b>: set the seconds to match the structure (about 30 s per verse + chorus).","Cover and repaint (re-singing or editing part of a song) aren't in ComfyUI for 1.5 yet."])}`}); }
-  steps.push({tag:"Run",title:"Run and save",body:ul(["Press <b>Run</b>. Songs save to <code>ComfyUI/output/audio/</code>; you can play them in the Save Audio node.","Generate 4–5 takes with different seeds and keep the best. Fast models make this cheap.","For sound effects instead of songs, try the <b>Stable Audio Open</b> template."])});
-  steps.push(troubleshoot("music"));
-  return {title:`${MUS.name} on ${TIERS[S.tier].short}`,family:MUS.family,steps,alt:S.tier==="cpu"?"Music works on a CPU but expect several minutes per song.":"",why:MUS.why};
-}
+                        .detect dd {
+                                margin: 0;
+                                overflow-wrap: anywhere
+                        }
 
-function troubleshoot(kind){
-  const low=["cpu","v6","v8","m16"].includes(S.tier);
-  const a=["<b>“Out of memory” / CUDA OOM:</b> lower the resolution"+(kind==="video"?" or frame count":"")+", close other apps, and restart ComfyUI. "+(low?"On your card, also try starting ComfyUI with <code>--lowvram</code> (Desktop: Settings → Server Config).":""),
-   "<b>Red node / missing model:</b> the file is in the wrong folder or has a different name. Click the model box on the node and pick the file again.",
-   "<b>Red node / missing node type:</b> open the <b>Manager</b> → <b>Install Missing Custom Nodes</b>, then restart.",
-   "<b>Black or noisy output:</b> the VAE doesn't match the model. Use the VAE listed in the download table.",
-   "<b>LoRA does nothing or breaks the image:</b> it was made for a different base model, or strength is too high."];
-  if(parseInt(S.ram)<=16&&kind!=="music") a.push("<b>Very slow, or the computer freezes:</b> 16 GB of system RAM is tight for big models. Use smaller (fp8 or GGUF) versions, or upgrade to 32 GB.");
-  return {tag:"Fixes",title:"If something goes wrong",body:ul(a)};
-}
+                        select,button {
+                                font: inherit
+                        }
 
-/* ---------- render ---------- */
-function render(){
-  const plan = S.media==="image"?buildImage():S.media==="video"?buildVideo():buildMusic();
-  const key=`done:${S.media}:${S.mode}:${S.tier}:${S.lora}:${S.cn}`;
-  let done={}; try{done=JSON.parse(store.get(key)||"{}")}catch(e){}
-  const el=document.getElementById("plan");
-  const chips=[TIERS[S.tier].short+" VRAM",S.ram+" GB RAM",MODES[S.media].find(m=>m[0]===S.mode)[1]];
-  if(S.lora) chips.push("+ LoRA"); if(S.cn) chips.push(S.media==="music"?"+ steering":"+ ControlNet");
-  if(S.media!=="music") chips.push(plan.picked?"Your choice":"Recommended");
-  el.innerHTML=`<section class="summary">
-    <p class="label">Your recipe</p>
-    <h2>${esc(plan.title)}</h2>
-    <div class="chips">${chips.map(c=>`<span class="chip">${esc(c)}</span>`).join("")}<span class="chip">${esc(plan.family)}</span></div>
-    ${plan.warn?`<div class="note">${plan.warn}</div>`:""}
-    ${plan.alt?`<div class="note"><b>Also good to know:</b> ${plan.alt}</div>`:""}
-    <div class="actions"><button class="btn" id="copy" type="button">Copy steps as text</button><button class="btn ghost" id="reset" type="button">Clear checkmarks</button><div class="bar" aria-hidden="true"><i id="barfill"></i></div><span class="progress" id="prog"></span></div>
-  </section>
-  <div class="legend" aria-label="Wire colour legend">${["MODEL","CLIP","CONDITIONING","LATENT","VAE","IMAGE","AUDIO"].map(t=>`<span class="wire" style="color:var(${wireColor(t)})">${t}</span>`).join("")}</div>
-  ${plan.steps.map((s,i)=>`<article class="step${done[i]?" done":""}" data-i="${i}"><div class="num">${i+1}<input type="checkbox" id="ck-${i}" aria-label="Mark step ${i+1} done" ${done[i]?"checked":""}></div><div class="content"><span class="tag">${esc(s.tag)}</span><h3>${esc(s.title)}</h3>${s.body}</div></article>`).join("")}`;
-  const upd=()=>{const n=plan.steps.length;const d=Object.values(done).filter(Boolean).length;document.getElementById("barfill").style.width=(d/n*100)+"%";document.getElementById("prog").textContent=`${d} of ${n} done`;};
-  upd();
-  el.querySelectorAll(".step input").forEach(cb=>cb.addEventListener("change",e=>{const i=e.target.closest(".step").dataset.i;done[i]=e.target.checked;e.target.closest(".step").classList.toggle("done",e.target.checked);store.set(key,JSON.stringify(done));upd();}));
-  document.getElementById("reset").onclick=()=>{done={};store.set(key,"{}");render();};
-  document.getElementById("copy").onclick=(ev)=>{
-    const txt=[plan.title,""].concat([...el.querySelectorAll(".step")].map(a=>{const c=a.querySelector(".content").cloneNode(true);c.querySelectorAll("tr").forEach(r=>{r.append(" | ")});return `${parseInt(a.dataset.i)+1}. `+c.innerText.replace(/\n{3,}/g,"\n\n").trim();})).join("\n\n");
-    const b=ev.currentTarget;
-    const ok=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy steps as text",1800)};
-    try{navigator.clipboard.writeText(txt).then(ok,()=>fallback(txt,b));}catch(e){fallback(txt,b)}
-  };
-  store.set("state",JSON.stringify(S));
-  renderModelPicker();
-}
-function renderModelPicker(){
-  const field=document.getElementById("modelField"), sel=document.getElementById("model"), hint=document.getElementById("fitHint");
-  if(S.media==="music"){field.hidden=true;return;}
-  field.hidden=false;
-  const media=S.media, cat=media==="image"?IMG:VID, pick=media==="image"?IMG_PICK[S.tier]:VID_PICK[S.tier];
-  const cur=media==="image"?S.imgModel:S.vidModel;
-  const recName=pick==="cloud"?"cloud GPU suggested":cat[pick].name;
-  sel.innerHTML=`<option value="auto">Recommended for this computer (${recName})</option>`+ORDER[media].map(k=>`<option value="${k}">${cat[k].name} — ${fitOf(media,k).txt}</option>`).join("");
-  sel.value=cur;
-  const key=chosenKey();
-  if(key==="cloud") hint.textContent="No model fits well without a graphics card. Pick one anyway to see its recipe.";
-  else { const f=fitOf(media,key); hint.innerHTML=`<span class="fit ${f.cls}">${f.txt}</span> on ${TIERS[S.tier].short}. ${cur==="auto"?"Choose another model to see its recipe instead.":""}`; }
-}
-function fallback(txt,b){const ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.append(ta);ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();b.textContent=ok?"Copied":"Copy blocked — select the text instead";setTimeout(()=>b.textContent="Copy steps as text",2200);}
+                        select {
+                                width: 100%;
+                                padding: 9px 10px;
+                                border-radius: 8px;
+                                border: 1px solid var(--line);
+                                background: var(--soft);
+                                color: var(--ink)
+                        }
 
-function renderControls(){
-  document.querySelectorAll(".media button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.media===S.media));
-  const m=document.getElementById("modes");
-  m.innerHTML=MODES[S.media].map(([k,l])=>`<button type="button" data-mode="${k}" aria-pressed="${k===S.mode}">${l}</button>`).join("");
-  m.querySelectorAll("button").forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;renderControls();render();});
-  document.getElementById("tier").value=S.tier;
-  document.getElementById("ram").value=S.ram;
-  document.getElementById("optLora").checked=S.lora;
-  document.getElementById("optCN").checked=S.cn;
-  document.querySelector("label[for=optCN]");
-}
+                        .field {
+                                display: flex;
+                                flex-direction: column;
+                                gap: 6px
+                        }
 
-/* init */
-detect();
-const sel=document.getElementById("tier");
-sel.innerHTML=Object.entries(TIERS).map(([k,v])=>`<option value="${k}">${v.label}${detected.tier===k?" — detected":""}</option>`).join("");
-try{const saved=JSON.parse(store.get("state")||"null");if(saved&&TIERS[saved.tier])S=Object.assign(S,saved);else if(detected.tier)S.tier=detected.tier;}catch(e){if(detected.tier)S.tier=detected.tier;}
-if(detected.mem&&detected.mem<8&&!store.get("state")) S.ram="8";
-if(S.tier==="m32") S.ram="32";
-renderDetect();
-document.querySelectorAll(".media button").forEach(b=>b.onclick=()=>{S.media=b.dataset.media;S.mode=MODES[S.media][0][0];renderControls();render();});
-sel.onchange=()=>{S.tier=sel.value;render();};
-document.getElementById("ram").onchange=e=>{S.ram=e.target.value;render();};
-document.getElementById("optLora").onchange=e=>{S.lora=e.target.checked;render();};
-document.getElementById("model").onchange=e=>{if(S.media==="image")S.imgModel=e.target.value;else S.vidModel=e.target.value;render();};
-if(!S.imgModel||(S.imgModel!=="auto"&&!IMG[S.imgModel]))S.imgModel="auto";
-if(!S.vidModel||(S.vidModel!=="auto"&&!VID[S.vidModel]))S.vidModel="auto";
-document.getElementById("optCN").onchange=e=>{S.cn=e.target.checked;render();};
-renderControls(); render();
-})();
-</script>
+                        .field label {
+                                font-weight: 700;
+                                font-size: .92rem
+                        }
 
-</body>
+                        .media {
+                                display: grid;
+                                grid-template-columns: repeat(3,minmax(0,1fr));
+                                gap: 8px
+                        }
+
+                        .media button {
+                                border: 1px solid var(--line);
+                                background: var(--soft);
+                                color: var(--ink);
+                                border-radius: 8px;
+                                padding: 12px 6px;
+                                cursor: pointer;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                gap: 6px;
+                                font-weight: 700
+                        }
+
+                        .media button svg {
+                                width: 26px;
+                                height: 26px;
+                                stroke: currentColor;
+                                fill: none;
+                                stroke-width: 1.8
+                        }
+
+                        .media button[aria-pressed="true"] {
+                                background: var(--accent);
+                                color: var(--accent-ink);
+                                border-color: var(--accent)
+                        }
+
+                        .seg {
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 6px
+                        }
+
+                        .seg button {
+                                border: 1px solid var(--line);
+                                background: var(--soft);
+                                color: var(--ink);
+                                border-radius: 999px;
+                                padding: 6px 12px;
+                                cursor: pointer;
+                                font-size: .9rem
+                        }
+
+                        .seg button[aria-pressed="true"] {
+                                border-color: var(--accent);
+                                box-shadow: inset 0 0 0 1px var(--accent);
+                                color: var(--accent);
+                                font-weight: 700
+                        }
+
+                        .toggles {
+                                display: flex;
+                                flex-direction: column;
+                                gap: 8px
+                        }
+
+                        .tog {
+                                display: flex;
+                                gap: 10px;
+                                align-items: flex-start;
+                                cursor: pointer
+                        }
+
+                        .tog input {
+                                margin-top: 4px;
+                                accent-color: var(--accent);
+                                width: 18px;
+                                height: 18px
+                        }
+
+                        .tog small {
+                                display: block;
+                                color: var(--muted)
+                        }
+
+                        button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible {
+                                outline: 2px solid var(--accent);
+                                outline-offset: 2px
+                        }
+
+                        .hint {
+                                font-size: .85rem;
+                                color: var(--muted);
+                                margin: 0
+                        }
+
+                        .fit {
+                                font-weight: 700
+                        }
+
+                        .fit.good {
+                                color: var(--ok)
+                        }
+
+                        .fit.slow {
+                                color: var(--warn)
+                        }
+
+                        .fit.bad {
+                                color: var(--w-vae)
+                        }
+
+                        /* plan */
+                        .plan {
+                                display: flex;
+                                flex-direction: column;
+                                gap: 18px;
+                                min-width: 0
+                        }
+
+                        .summary {
+                                background: var(--panel);
+                                border: 1px solid var(--line);
+                                border-radius: 10px;
+                                padding: 20px;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 10px
+                        }
+
+                        .summary h2 {
+                                font-size: 1.6rem
+                        }
+
+                        .chips {
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 6px
+                        }
+
+                        .chip {
+                                font-family: var(--mono);
+                                font-size: .75rem;
+                                border: 1px solid var(--line);
+                                border-radius: 4px;
+                                padding: 2px 8px;
+                                color: var(--muted)
+                        }
+
+                        .actions {
+                                display: flex;
+                                gap: 8px;
+                                flex-wrap: wrap;
+                                align-items: center
+                        }
+
+                        .btn {
+                                border: 1px solid var(--accent);
+                                background: var(--accent);
+                                color: var(--accent-ink);
+                                border-radius: 8px;
+                                padding: 8px 14px;
+                                cursor: pointer;
+                                font-weight: 700
+                        }
+
+                        .btn.ghost {
+                                background: transparent;
+                                color: var(--accent)
+                        }
+
+                        .progress {
+                                font-family: var(--mono);
+                                font-size: .8rem;
+                                color: var(--muted)
+                        }
+
+                        .bar {
+                                height: 6px;
+                                background: var(--line);
+                                border-radius: 3px;
+                                overflow: hidden;
+                                flex: 1;
+                                min-width: 120px
+                        }
+
+                        .bar i {
+                                display: block;
+                                height: 100%;
+                                background: var(--accent);
+                                width: 0;
+                                transition: width .3s
+                        }
+
+                        .step {
+                                background: var(--panel);
+                                border: 1px solid var(--line);
+                                border-radius: 10px;
+                                display: grid;
+                                grid-template-columns: 48px minmax(0,1fr);
+                                overflow: hidden
+                        }
+
+                        .step .num {
+                                background: var(--soft);
+                                border-right: 1px solid var(--line);
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                padding-top: 16px;
+                                gap: 10px;
+                                font-family: var(--display);
+                                font-weight: 800;
+                                font-size: 1.3rem;
+                                color: var(--muted)
+                        }
+
+                        .step .num input {
+                                width: 20px;
+                                height: 20px;
+                                accent-color: var(--accent);
+                                cursor: pointer
+                        }
+
+                        .step.done .num {
+                                color: var(--ok)
+                        }
+
+                        .step .content {
+                                padding: 16px 18px;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 10px;
+                                min-width: 0
+                        }
+
+                        .step h3 {
+                                margin: 0;
+                                font-family: var(--display);
+                                font-weight: 700;
+                                font-size: 1.15rem;
+                                text-wrap: balance
+                        }
+
+                        .step .tag {
+                                font-family: var(--mono);
+                                font-size: .7rem;
+                                text-transform: uppercase;
+                                letter-spacing: .08em;
+                                color: var(--accent)
+                        }
+
+                        .step p,.step ul,.step ol {
+                                margin: 0;
+                                max-width: 72ch
+                        }
+
+                        .step li+li {
+                                margin-top: 4px
+                        }
+
+                        code,.mono {
+                                font-family: var(--mono);
+                                font-size: .84em;
+                                background: var(--soft);
+                                border: 1px solid var(--line);
+                                border-radius: 4px;
+                                padding: 0 4px;
+                                overflow-wrap: anywhere
+                        }
+
+                        a {
+                                color: var(--accent)
+                        }
+
+                        .tablewrap {
+                                overflow-x: auto;
+                                border: 1px solid var(--line);
+                                border-radius: 8px
+                        }
+
+                        table {
+                                border-collapse: collapse;
+                                width: 100%;
+                                font-size: .88rem;
+                                min-width: 520px
+                        }
+
+                        th,td {
+                                text-align: left;
+                                padding: 8px 10px;
+                                border-bottom: 1px solid var(--line);
+                                vertical-align: top
+                        }
+
+                        th {
+                                font-family: var(--mono);
+                                font-size: .7rem;
+                                text-transform: uppercase;
+                                letter-spacing: .06em;
+                                color: var(--muted);
+                                background: var(--soft)
+                        }
+
+                        tr:last-child td {
+                                border-bottom: 0
+                        }
+
+                        td.f {
+                                font-family: var(--mono);
+                                font-size: .8rem;
+                                overflow-wrap: anywhere
+                        }
+
+                        .size {
+                                font-variant-numeric: tabular-nums;
+                                white-space: nowrap;
+                                color: var(--muted)
+                        }
+
+                        .graph {
+                                display: flex;
+                                flex-direction: column;
+                                gap: 6px;
+                                background: var(--soft);
+                                border: 1px solid var(--line);
+                                border-radius: 8px;
+                                padding: 12px;
+                                overflow-x: auto
+                        }
+
+                        .link {
+                                display: flex;
+                                align-items: center;
+                                gap: 8px;
+                                flex-wrap: wrap;
+                                font-size: .88rem
+                        }
+
+                        .node {
+                                font-family: var(--mono);
+                                font-size: .78rem;
+                                background: var(--panel);
+                                border: 1px solid var(--line);
+                                border-radius: 6px;
+                                padding: 3px 8px;
+                                white-space: nowrap
+                        }
+
+                        .wire {
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 4px;
+                                font-family: var(--mono);
+                                font-size: .68rem;
+                                font-weight: 600;
+                                letter-spacing: .04em
+                        }
+
+                        .wire::before {
+                                content: "";
+                                width: 22px;
+                                height: 3px;
+                                border-radius: 2px;
+                                background: currentColor
+                        }
+
+                        .wire::after {
+                                content: "▸"
+                        }
+
+                        .settings {
+                                display: grid;
+                                grid-template-columns: repeat(auto-fill,minmax(150px,1fr));
+                                gap: 8px
+                        }
+
+                        .set {
+                                background: var(--soft);
+                                border: 1px solid var(--line);
+                                border-radius: 8px;
+                                padding: 8px 10px
+                        }
+
+                        .set b {
+                                display: block;
+                                font-family: var(--mono);
+                                font-size: .7rem;
+                                text-transform: uppercase;
+                                letter-spacing: .06em;
+                                color: var(--muted);
+                                font-weight: 600
+                        }
+
+                        .set span {
+                                font-variant-numeric: tabular-nums;
+                                font-weight: 700
+                        }
+
+                        .note {
+                                background: var(--warn-bg);
+                                border-left: 3px solid var(--warn);
+                                padding: 10px 12px;
+                                border-radius: 0 6px 6px 0;
+                                font-size: .92rem
+                        }
+
+                        .note b {
+                                color: var(--warn)
+                        }
+
+                        .prompt {
+                                font-family: var(--mono);
+                                font-size: .82rem;
+                                background: var(--soft);
+                                border: 1px solid var(--line);
+                                border-radius: 8px;
+                                padding: 10px 12px;
+                                white-space: pre-wrap;
+                                overflow-wrap: anywhere
+                        }
+
+                        .legend {
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 10px 16px;
+                                font-size: .78rem
+                        }
+
+                        .topbar {
+                                display: flex;
+                                flex-wrap: wrap;
+                                align-items: center;
+                                gap: 8px 12px;
+                                margin-bottom: 12px
+                        }
+
+                        .ver {
+                                font-family: var(--mono);
+                                font-size: .78rem;
+                                font-weight: 600;
+                                border: 1px solid var(--line);
+                                background: var(--panel);
+                                border-radius: 4px;
+                                padding: 3px 8px;
+                                font-variant-numeric: tabular-nums
+                        }
+
+                        .btn.small {
+                                padding: 4px 10px;
+                                font-size: .85rem
+                        }
+
+                        .updmsg {
+                                font-size: .88rem;
+                                color: var(--muted);
+                                min-width: 0;
+                                overflow-wrap: anywhere
+                        }
+
+                        .updmsg.new {
+                                color: var(--warn);
+                                font-weight: 700
+                        }
+
+                        .updmsg.ok {
+                                color: var(--ok)
+                        }
+
+                        footer {
+                                color: var(--muted);
+                                font-size: .85rem;
+                                max-width: 75ch
+                        }
+
+                        @media (prefers-reduced-motion:reduce) {
+                                .bar i {
+                                        transition: none
+                                }
+                        }
+                </style>
+        </head>
+        <body>
+                <div class="wrap">
+                        <header>
+                                <div class="topbar">
+                                        <span class="ver" id="ver">v1.0.0</span>
+                                        <button type="button" class="btn ghost small" id="updBtn">Check for
+                                        updates</button> <span class="updmsg" id="updMsg" role="status"></span>
+                                </div>
+                                <h1>ComfyUI Starter Planner</h1>
+                                <p>
+                                        Pick what you want to make. The planner checks this computer, picks models that
+                                        will actually fit on it, and writes a step-by-step recipe: what to download,
+                                        where each file goes, which nodes to connect, the settings to start with, and
+                                        how to add LoRAs and ControlNet.
+                                </p>
+                                <div class="wires" aria-hidden="true">
+                                        <span style="background:var(--w-model)"></span><span style="background:var(--w-clip)"></span><span style="background:var(--w-cond)"></span><span style="background:var(--w-latent)"></span><span style="background:var(--w-vae)"></span><span style="background:var(--w-image)"></span><span style="background:var(--w-video)"></span><span style="background:var(--w-audio)"></span>
+                                </div>
+                        </header>
+
+                        <div class="grid">
+                                <aside class="rail">
+                                        <section class="box" aria-labelledby="pc-h">
+                                                <p class="label">Step A</p>
+                                                <h2 id="pc-h">Your computer</h2>
+                                                <dl class="detect" id="detect">
+                                                        <dt>Graphics</dt>
+                                                        <dd>Checking…</dd>
+                                                </dl>
+                                                <div class="field">
+                                                        <label for="tier">Graphics card memory (VRAM)</label>
+                                                        <select id="tier"></select>
+                                                </div>
+                                                <p class="hint" id="tierHint"></p>
+                                                <div class="field">
+                                                        <label for="ram">System RAM</label>
+                                                        <select id="ram">
+                                                                <option value="8">8 GB</option>
+                                                                <option value="16" selected>16 GB</option>
+                                                                <option value="32">32 GB</option>
+                                                                <option value="64">64 GB or more</option>
+                                                        </select>
+                                                </div>
+                                        </section>
+
+                                        <section class="box" aria-labelledby="what-h">
+                                                <p class="label">Step B</p>
+                                                <h2 id="what-h">What do you want to make?</h2>
+                                                <div class="media" role="group" aria-label="Media type">
+                                                        <button type="button" data-media="image" id="m-image">
+                                                                <svg viewBox="0 0 24 24">
+                                                                        <rect
+                                                                                x="3"
+                                                                                y="4"
+                                                                                width="18"
+                                                                                height="16"
+                                                                                rx="2"
+                                                                        />
+                                                                        <circle cx="9" cy="10" r="2" />
+                                                                        <path d="M21 17l-5-5-9 8" />
+                                                                </svg>
+                                                                Image
+                                                        </button>
+                                                        <button type="button" data-media="video" id="m-video">
+                                                                <svg viewBox="0 0 24 24">
+                                                                        <rect
+                                                                                x="3"
+                                                                                y="6"
+                                                                                width="13"
+                                                                                height="12"
+                                                                                rx="2"
+                                                                        />
+                                                                        <path d="M16 10l5-3v10l-5-3z" />
+                                                                </svg>
+                                                                Video
+                                                        </button>
+                                                        <button type="button" data-media="music" id="m-music">
+                                                                <svg viewBox="0 0 24 24">
+                                                                        <path d="M9 18V5l11-2v13" />
+                                                                        <circle cx="6" cy="18" r="3" />
+                                                                        <circle cx="17" cy="16" r="3" />
+                                                                </svg>
+                                                                Music
+                                                        </button>
+                                                </div>
+                                                <div class="field">
+                                                        <span class="label" id="modeLbl">Starting point</span>
+                                                        <div class="seg" id="modes" role="group" aria-labelledby="modeLbl"></div>
+                                                </div>
+                                                <div class="field" id="modelField">
+                                                        <label for="model">Model</label> <select id="model"></select>
+                                                        <p class="hint" id="fitHint"></p>
+                                                </div>
+                                                <div class="toggles">
+                                                        <label class="tog"><input type="checkbox" id="optLora"><span><b>Use
+                                                        a LoRA</b><small>Add a style, character or speed-up file on top
+                                                        of the main model.</small></span></label>
+                                                        <label class="tog"><input type="checkbox" id="optCN"><span><b>Use
+                                                        ControlNet</b><small>Copy the pose, edges or depth from a
+                                                        reference.</small></span></label>
+                                                </div>
+                                        </section>
+                                </aside>
+
+                                <main class="plan" id="plan" aria-live="polite"></main>
+                        </div>
+
+                        <footer>
+                                Model picks reflect what ComfyUI supports natively as of October 2026. Sizes are
+                                approximate. Detection reads what your browser reports, which can be vague (Safari says
+                                “Apple GPU”, some browsers hide the card name), so check the VRAM choice above matches
+                                your machine. On Windows you can confirm in Task Manager → Performance → GPU →
+                                “Dedicated GPU memory”.
+                        </footer>
+                </div>
+
+                <script>
+                        /* ---------- version + update check ---------- */
+                        (function(){
+                        const APP_VERSION="1.0.0";
+                        const REPO="Ripcurlsurf/comfyUI-for-beginners";
+                        const REPO_URL="https://github.com/"+REPO;
+                        document.getElementById("ver").textContent="v"+APP_VERSION;
+                        const msg=document.getElementById("updMsg"), btn=document.getElementById("updBtn");
+                        function cmp(a,b){const x=String(a).replace(/^v/,"").split(".").map(Number),y=String(b).replace(/^v/,"").split(".").map(Number);for(let i=0;i<3;i++){const d=(x[i]||0)-(y[i]||0);if(d)return d>0?1:-1;}return 0;}
+                        function show(html,cls){msg.className="updmsg"+(cls?" "+cls:"");msg.innerHTML=html;}
+                        async function getJSON(u){const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(r.status);return r.json();}
+                        async function latest(){
+                          for(const br of ["main","master"]){
+                            try{const j=await getJSON(`https://raw.githubusercontent.com/${REPO}/${br}/version.json`);if(j&&j.version)return j;}catch(e){}
+                          }
+                          const j=await getJSON(`https://api.github.com/repos/${REPO}/releases/latest`);
+                          return {version:j.tag_name,notes:j.name||"",url:j.html_url};
+                        }
+                        btn.addEventListener("click",async()=>{
+                          btn.disabled=true; show("Checking…");
+                          try{
+                            const j=await latest(); const link=(j.url&&/^https:\/\/github\.com\//.test(j.url))?j.url:REPO_URL;
+                            if(cmp(j.version,APP_VERSION)>0) show(`Version ${String(j.version).replace(/^v/,"")} is available${j.notes?": "+String(j.notes).replace(/[<>&]/g,""):""}. <a href="${link}" target="_blank" rel="noopener">Download it from GitHub</a>`,"new");
+                            else show(`You have the latest version (v${APP_VERSION}).`,"ok");
+                          }catch(e){
+                            show(`Couldn't check from here. See the latest version on <a href="${REPO_URL}" target="_blank" rel="noopener">GitHub</a>.`);
+                          }
+                          btn.disabled=false;
+                        });
+                        })();
+                        (function(){
+                        const TIERS = {
+                          cpu:{label:"No graphics card / Intel or AMD integrated", short:"No GPU"},
+                          v6:{label:"4–6 GB (e.g. GTX 1660, RTX 2060, RTX 3050)", short:"≤6 GB"},
+                          v8:{label:"8–10 GB (e.g. RTX 3070, 4060, 5060, 3080 10GB)", short:"8 GB"},
+                          v12:{label:"12 GB (e.g. RTX 3060 12GB, 4070, 5070)", short:"12 GB"},
+                          v16:{label:"16 GB (e.g. RTX 4060 Ti 16GB, 4080, 5070 Ti, 5080)", short:"16 GB"},
+                          v24:{label:"24 GB or more (e.g. RTX 3090, 4090, 5090)", short:"24 GB+"},
+                          m16:{label:"Apple Silicon Mac, 16 GB or less", short:"Mac ≤16 GB"},
+                          m32:{label:"Apple Silicon Mac, 24 GB or more", short:"Mac 24 GB+"}
+                        };
+                        const GPU = [
+                         [/5090/,"v24"],[/4090 laptop/i,"v16"],[/4090/,"v24"],[/3090/,"v24"],[/7900 ?xtx/i,"v24"],[/7900 ?xt/i,"v16"],[/A6000|A5000|RTX 6000|L40/i,"v24"],
+                         [/4080 laptop/i,"v12"],[/5080 laptop/i,"v16"],[/4080|5080|5070 ti|4070 ti super|7800 ?xt|6800|6900|7900 gre/i,"v16"],
+                         [/4070 laptop|5070 laptop/i,"v8"],[/4070|5070|3060(?! ti)|3080 ti|2080 ti|7700 ?xt|6700 ?xt|6750/i,"v12"],
+                         [/3080|3070|3060 ti|4060|5060|2080|2070|1080|1070|7600|6600|a770|a750|b580/i,"v8"],
+                         [/2060|1660|1650|3050|2050|1060|6500|mx\d/i,"v6"],
+                         [/apple|m1|m2|m3|m4|m5/i,"m16"],
+                         [/intel|uhd|iris|radeon\(tm\) graphics|vega|swiftshader|llvmpipe|microsoft basic/i,"cpu"]
+                        ];
+
+                        const HF = "https://huggingface.co/";
+                        const WAN22 = HF+"Comfy-Org/Wan_2.2_ComfyUI_Repackaged/tree/main/split_files";
+                        const WAN21 = HF+"Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files";
+                        const UMT5 = {f:"umt5_xxl_fp8_e4m3fn_scaled.safetensors",dir:"text_encoders",url:WAN21+"/text_encoders",size:"6.7 GB",what:"Text encoder (reads your prompt)"};
+
+                        /* ---------- IMAGE ---------- */
+                        const IMG = {
+                         sd15:{name:"DreamShaper 8", family:"Stable Diffusion 1.5",
+                          why:"Small (2 GB) and fast. Runs on almost any graphics card and still gives good all-round results.",
+                          files:[{f:"dreamshaper_8.safetensors",dir:"checkpoints",url:"https://civitai.com/models/4384/dreamshaper",size:"2.1 GB",what:"All-in-one checkpoint (model + text encoder + VAE)"}],
+                          template:"the default workflow (Workflow → New, it loads automatically) — it is built for this kind of checkpoint",
+                          graph:[["Load Checkpoint","MODEL","KSampler"],["Load Checkpoint","CLIP","CLIP Text Encode (positive + negative)"],["CLIP Text Encode","CONDITIONING","KSampler"],["Empty Latent Image","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load Checkpoint","VAE","VAE Decode"],["VAE Decode","IMAGE","Save Image"]],
+                          set:{Resolution:"512 × 768",Steps:"25",CFG:"7",Sampler:"dpmpp_2m",Scheduler:"karras",Denoise:"1.0"},
+                          neg:true,
+                          prompt:"a cosy reading nook by a rainy window, warm lamp light, wooden shelves full of books, soft focus, detailed, 35mm photo",
+                          negPrompt:"blurry, low quality, deformed hands, watermark, text",
+                          lora:{where:"https://civitai.com/models?baseModels=SD+1.5&types=LORA",filter:"Base model: SD 1.5",node:"Load LoRA",wiring:"Place <b>Load LoRA</b> between <b>Load Checkpoint</b> and the rest: Checkpoint MODEL → LoRA → KSampler, and Checkpoint CLIP → LoRA → both CLIP Text Encode nodes.",strength:"0.6–0.9 for both strength_model and strength_clip"},
+                          cn:{files:[{f:"control_v11p_sd15_canny.pth",dir:"controlnet",url:HF+"lllyasviel/ControlNet-v1-1/tree/main",size:"1.4 GB",what:"Edge (Canny) control"},{f:"control_v11f1p_sd15_depth.pth",dir:"controlnet",url:HF+"lllyasviel/ControlNet-v1-1/tree/main",size:"1.4 GB",what:"Depth control"},{f:"control_v11p_sd15_openpose.pth",dir:"controlnet",url:HF+"lllyasviel/ControlNet-v1-1/tree/main",size:"1.4 GB",what:"Pose control"}],
+                           how:["Add <b>Load Image</b> and choose your reference picture.","Add a preprocessor: <b>Canny</b> is built in. For depth or pose, install <b>comfyui_controlnet_aux</b> from the Manager and use <b>Depth Anything V2</b> or <b>DWPose Estimator</b>.","Add <b>Load ControlNet Model</b> and pick the matching file (canny file for Canny, and so on).","Add <b>Apply ControlNet</b>. Connect both prompt outputs (positive, negative) into it, the ControlNet model, and the preprocessed IMAGE. Its two outputs go into the KSampler instead.","Start with strength <code>0.8</code>, end_percent <code>0.8</code>. Lower strength = looser copy."]}
+                         },
+                         sdxl:{name:"Juggernaut XL", family:"Stable Diffusion XL",
+                          why:"The best-supported model family for beginners: thousands of LoRAs, a single ControlNet file that does every control type, and it fits in 8 GB.",
+                          files:[{f:"juggernautXL (latest version).safetensors",dir:"checkpoints",url:"https://civitai.com/models/133005/juggernaut-xl",size:"6.6 GB",what:"All-in-one checkpoint"}],
+                          template:"the default workflow (Workflow → New); just switch the checkpoint to Juggernaut XL and the size to 1024 × 1024",
+                          graph:[["Load Checkpoint","MODEL","KSampler"],["Load Checkpoint","CLIP","CLIP Text Encode (positive + negative)"],["CLIP Text Encode","CONDITIONING","KSampler"],["Empty Latent Image","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load Checkpoint","VAE","VAE Decode"],["VAE Decode","IMAGE","Save Image"]],
+                          set:{Resolution:"1024 × 1024 (or 832 × 1216)",Steps:"30",CFG:"5",Sampler:"dpmpp_2m",Scheduler:"karras",Denoise:"1.0"},
+                          neg:true,
+                          prompt:"a cosy reading nook by a rainy window, warm lamp light, wooden shelves full of books, cinematic photo, shallow depth of field",
+                          negPrompt:"blurry, low quality, deformed, watermark, text",
+                          lora:{where:"https://civitai.com/models?baseModels=SDXL+1.0&types=LORA",filter:"Base model: SDXL 1.0",node:"Load LoRA",wiring:"Place <b>Load LoRA</b> between <b>Load Checkpoint</b> and the rest: Checkpoint MODEL → LoRA → KSampler, and Checkpoint CLIP → LoRA → both CLIP Text Encode nodes.",strength:"0.6–1.0 for both strengths"},
+                          cn:{files:[{f:"diffusion_pytorch_model_promax.safetensors (rename to xinsir_union_promax.safetensors)",dir:"controlnet",url:HF+"xinsir/controlnet-union-sdxl-1.0/tree/main",size:"2.5 GB",what:"Union ControlNet: canny, depth, pose, lineart, scribble, tile in one file"}],
+                           how:["Add <b>Load Image</b> and choose your reference picture.","Add a preprocessor: <b>Canny</b> is built in. For depth or pose, install <b>comfyui_controlnet_aux</b> from the Manager and use <b>Depth Anything V2</b> or <b>DWPose Estimator</b>.","Add <b>Load ControlNet Model</b> → <b>SetUnionControlNetType</b> (choose canny/depth/openpose to match your preprocessor).","Add <b>Apply ControlNet</b>. Connect both prompts, the ControlNet and the preprocessed IMAGE. Its positive/negative outputs go into the KSampler.","Start with strength <code>0.7</code>, end_percent <code>0.8</code>."]}
+                         },
+                         flux:{name:"FLUX.1 Dev (fp8)", family:"FLUX.1 (Black Forest Labs, 12B)",
+                          why:"Very detailed, follows prompts closely, and has one of the biggest LoRA libraries after SDXL. Slower than Z-Image Turbo because it needs about 20 steps.",
+                          files:[{f:"flux1-dev-fp8.safetensors",dir:"checkpoints",url:HF+"Comfy-Org/flux1-dev/blob/main/flux1-dev-fp8.safetensors",size:"17 GB",what:"All-in-one checkpoint (model + text encoders + VAE)"}],
+                          template:"<b>Flux Dev fp8</b> from Workflow → Browse Templates → Image",
+                          graph:[["Load Checkpoint","MODEL","KSampler"],["Load Checkpoint","CLIP","CLIP Text Encode"],["CLIP Text Encode","CONDITIONING","FluxGuidance (3.5)"],["FluxGuidance","CONDITIONING","KSampler (positive)"],["Empty SD3 Latent Image","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load Checkpoint","VAE","VAE Decode"],["VAE Decode","IMAGE","Save Image"]],
+                          set:{Resolution:"1024 × 1024",Steps:"20",CFG:"1",Guidance:"3.5 (FluxGuidance node)",Sampler:"euler",Scheduler:"simple"},
+                          neg:false,
+                          prompt:"A cosy reading nook beside a rain-streaked window at dusk. A brass lamp casts warm light over oak shelves packed with worn paperbacks. A mug of tea steams on the sill. Natural photo, 35mm lens, soft focus background.",
+                          lora:{where:"https://civitai.com/models?baseModels=Flux.1+D&types=LORA",filter:"Base model: Flux.1 D",node:"LoraLoaderModelOnly",wiring:"Place <b>Load LoRA</b> right after <b>Load Checkpoint</b>: MODEL and CLIP both pass through it on the way to the KSampler and text encoder. (Many Flux LoRAs only change the model, so <b>LoraLoaderModelOnly</b> also works.)",strength:"0.7–1.0"},
+                          cn:{files:[{f:"diffusion_pytorch_model.safetensors (rename to flux_union_pro2.safetensors)",dir:"controlnet",url:HF+"Shakker-Labs/FLUX.1-dev-ControlNet-Union-Pro-2.0/tree/main",size:"4.3 GB",what:"Union ControlNet for Flux: canny, depth, pose, soft edge, grey"}],
+                           how:["Add <b>Load Image</b> and choose your reference picture.","Add a preprocessor: <b>Canny</b> is built in; for depth or pose install <b>comfyui_controlnet_aux</b> and use <b>Depth Anything V2</b> or <b>DWPose Estimator</b>.","Add <b>Load ControlNet Model</b> (pick the Flux union file) and <b>Apply ControlNet</b>. Connect the FluxGuidance output as positive, the ControlNet, the VAE and the preprocessed IMAGE.","Start with strength <code>0.7</code> and end_percent <code>0.8</code>; for pose try strength <code>0.9</code>."]}
+                         },
+                         zit:{name:"Z-Image Turbo", family:"Z-Image (Alibaba Tongyi, 6B)",
+                          why:"Current favourite for beginners with a mid-range or better card: photo-real results in about 8 steps, reads long prompts well and can render text.",
+                          files:[{f:"z_image_turbo_bf16.safetensors",dir:"diffusion_models",url:HF+"Comfy-Org/z_image_turbo/blob/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors",size:"12.3 GB",what:"The image model"},{f:"qwen_3_4b.safetensors",dir:"text_encoders",url:HF+"Comfy-Org/z_image_turbo/blob/main/split_files/text_encoders/qwen_3_4b.safetensors",size:"8 GB",what:"Text encoder"},{f:"ae.safetensors",dir:"vae",url:HF+"Comfy-Org/z_image_turbo/blob/main/split_files/vae/ae.safetensors",size:"0.3 GB",what:"VAE (turns latents into pixels)"}],
+                          template:"<b>Z-Image Turbo</b> from Workflow → Browse Templates → Image",
+                          graph:[["Load Diffusion Model","MODEL","ModelSamplingAuraFlow"],["ModelSamplingAuraFlow","MODEL","KSampler"],["Load CLIP (type: lumina2)","CLIP","CLIP Text Encode"],["CLIP Text Encode","CONDITIONING","KSampler"],["Empty SD3 Latent Image","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load VAE","VAE","VAE Decode"],["VAE Decode","IMAGE","Save Image"]],
+                          set:{Resolution:"1024 × 1024",Steps:"8–9",CFG:"1",Sampler:"res_multistep",Scheduler:"simple",Denoise:"1.0"},
+                          neg:false,
+                          prompt:"A cosy reading nook beside a rain-streaked window at dusk. A brass lamp casts warm light over oak shelves packed with worn paperbacks. A mug of tea steams on the sill. Natural photo, 35mm lens, soft focus background.",
+                          lora:{where:"https://civitai.com/search/models?sortBy=models_v9&query=z-image%20turbo%20lora",filter:"Base model: ZImageTurbo",node:"LoraLoaderModelOnly",wiring:"Place <b>LoraLoaderModelOnly</b> between <b>Load Diffusion Model</b> and <b>ModelSamplingAuraFlow</b>.",strength:"0.7–1.0"},
+                          cn:{files:[{f:"Z-Image-Turbo-Fun-Controlnet-Union.safetensors",dir:"model_patches",url:HF+"alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union/blob/main/Z-Image-Turbo-Fun-Controlnet-Union.safetensors",size:"3 GB",what:"Union control: canny, HED, depth, pose, MLSD"}],
+                           how:["Open the template <b>Z-Image Turbo Fun Union ControlNet</b> (Browse Templates → Image). It is wired for you.","Note the folder: this file goes in <code>models/model_patches</code>, not <code>controlnet</code>.","In <b>Load Image</b>, choose your reference picture. The template runs a preprocessor (e.g. Canny or depth) on it.","Write your prompt and run. If the result copies too strictly, lower the control strength to about <code>0.6</code>."]}
+                         }
+                        };
+                        const IMG_PICK = {cpu:"sd15",v6:"sd15",v8:"sdxl",v12:"zit",v16:"zit",v24:"zit",m16:"sdxl",m32:"zit"};
+                        const IMG_ALT = {
+                         cpu:"ComfyUI on a CPU works but is slow: expect 2–10 minutes per image. If you want speed, try Comfy Cloud or a rented GPU and pick the 12 GB plan in this planner.",
+                         v6:"Want something newer? Z-Image Turbo also comes as small GGUF files (Q4). Install <b>ComfyUI-GGUF</b> from the Manager and search Hugging Face for <a href='https://huggingface.co/models?search=z-image-turbo%20gguf' target='_blank' rel='noopener'>z-image-turbo gguf</a>.",
+                         v8:"Z-Image Turbo can also run on 8 GB if you have 32 GB of system RAM (ComfyUI moves parts of it to RAM automatically). It is slower but sharper. Pick the 12 GB tier to see that recipe.",
+                         v12:"For the biggest LoRA library, SDXL (Juggernaut XL) is still a great second model to have. Pick the 8 GB tier to see that recipe.",
+                         v16:"Once you are comfortable, Qwen-Image (fp8) and FLUX.2 are the next step up. Both have official templates in Browse Templates.",
+                         v24:"You can also run FLUX.2 dev and Qwen-Image / Qwen-Image-Edit at full quality. Both have official templates in Browse Templates.",
+                         m16:"Macs run ComfyUI through Apple's Metal backend. It works well but is slower than an NVIDIA card of similar price; keep other apps closed while generating.",
+                         m32:"Macs run ComfyUI through Apple's Metal backend. Expect roughly 30–90 seconds per image with Z-Image Turbo depending on your chip."
+                        };
+
+                        /* ---------- VIDEO ---------- */
+                        const VID = {
+                         wan13:{name:"Wan 2.1 1.3B", family:"Wan 2.1 (small)",
+                          why:"The smallest good video model. Makes short 480p clips on cards with as little as 6–8 GB.",
+                          files:[{f:"wan2.1_t2v_1.3B_fp16.safetensors",dir:"diffusion_models",url:WAN21+"/diffusion_models",size:"2.8 GB",what:"Video model (text-to-video)"},UMT5,{f:"wan_2.1_vae.safetensors",dir:"vae",url:WAN21+"/vae",size:"0.25 GB",what:"VAE"}],
+                          i2vSwap:{f:"wan2.1_vace_1.3B_fp16.safetensors",dir:"diffusion_models",url:WAN21+"/diffusion_models",size:"4 GB",what:"VACE model — lets the 1.3B model start from your picture"},
+                          template:"<b>Wan 2.1 Text to Video</b> (Browse Templates → Video). For a starting picture use <b>Wan VACE Reference to Video</b>",
+                          graph:[["Load Diffusion Model","MODEL","ModelSamplingSD3 (shift 8)"],["ModelSamplingSD3","MODEL","KSampler"],["Load CLIP (type: wan)","CLIP","CLIP Text Encode (positive + negative)"],["CLIP Text Encode","CONDITIONING","KSampler"],["Empty Hunyuan Latent Video","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load VAE","VAE","VAE Decode"],["VAE Decode","IMAGE","Create Video → Save Video"]],
+                          set:{Resolution:"832 × 480",Frames:"33 (≈2 s)",FPS:"16",Steps:"30",CFG:"6",Sampler:"uni_pc / simple"},
+                          i2vNote:"The 1.3B model cannot take a picture directly. Use the VACE 1.3B file instead: the <b>WanVaceToVideo</b> node has a <code>reference_image</code> input where you plug in <b>Load Image</b>.",
+                          prompt:"A slow dolly shot through a rainy neon alley at night, puddles reflecting pink and blue signs, steam rising from a vent, cinematic, shallow depth of field",
+                          negPrompt:"blurry, static, low quality, jpeg artifacts, watermark",
+                          cnPick:"vace13"
+                         },
+                         wan5b:{name:"Wan 2.2 5B", family:"Wan 2.2 TI2V",
+                          why:"One model that does both text-to-video and image-to-video at up to 720p. Built to fit consumer cards.",
+                          files:[{f:"wan2.2_ti2v_5B_fp16.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"10 GB",what:"Video model (text or image to video)"},UMT5,{f:"wan2.2_vae.safetensors",dir:"vae",url:WAN22+"/vae",size:"1.4 GB",what:"VAE (Wan 2.2 version — the 2.1 VAE will not work here)"}],
+                          template:"<b>Wan 2.2 5B Video Generation</b> (Browse Templates → Video)",
+                          graph:[["Load Diffusion Model","MODEL","ModelSamplingSD3 (shift 8)"],["ModelSamplingSD3","MODEL","KSampler"],["Load CLIP (type: wan)","CLIP","CLIP Text Encode (positive + negative)"],["CLIP Text Encode","CONDITIONING","KSampler"],["Load Image (optional start frame)","IMAGE","Wan22ImageToVideoLatent"],["Wan22ImageToVideoLatent","LATENT","KSampler"],["KSampler","LATENT","VAE Decode"],["Load VAE","VAE","VAE Decode + Wan22ImageToVideoLatent"],["VAE Decode","IMAGE","Create Video → Save Video"]],
+                          set:{Resolution:"1280 × 704",Frames:"121 (≈5 s)",FPS:"24",Steps:"20",CFG:"5",Sampler:"uni_pc / simple"},
+                          lowSet:{Resolution:"832 × 480",Frames:"49 (≈2 s)"},
+                          i2vNote:"Connect <b>Load Image</b> to the <code>start_image</code> input of <b>Wan22ImageToVideoLatent</b>. Leave it unconnected for text-to-video.",
+                          prompt:"A slow dolly shot through a rainy neon alley at night, puddles reflecting pink and blue signs, steam rising from a vent, cinematic, shallow depth of field",
+                          negPrompt:"blurry, static, low quality, jpeg artifacts, watermark",
+                          cnPick:"vace13"
+                         },
+                         wan14:{name:"Wan 2.2 14B", family:"Wan 2.2 A14B (two-stage)",
+                          why:"The highest-quality open video model with full ComfyUI support. Uses two models in turn: a ‘high noise’ model for layout and motion, then a ‘low noise’ model for detail.",
+                          files:[{f:"wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Stage 1 model (text-to-video)"},{f:"wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Stage 2 model (text-to-video)"},UMT5,{f:"wan_2.1_vae.safetensors",dir:"vae",url:WAN21+"/vae",size:"0.25 GB",what:"VAE (14B uses the 2.1 VAE)"}],
+                          i2vFiles:[{f:"wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Stage 1 model (image-to-video)"},{f:"wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Stage 2 model (image-to-video)"}],
+                          template:"<b>Wan 2.2 14B Text to Video</b> or <b>Wan 2.2 14B Image to Video</b> (Browse Templates → Video)",
+                          graph:[["Load Diffusion Model (high noise)","MODEL","KSampler (Advanced) #1"],["Load Diffusion Model (low noise)","MODEL","KSampler (Advanced) #2"],["Load CLIP (type: wan)","CLIP","CLIP Text Encode (positive + negative)"],["CLIP Text Encode","CONDITIONING","both KSamplers"],["Empty latent / WanImageToVideo","LATENT","KSampler (Advanced) #1"],["KSampler #1","LATENT","KSampler (Advanced) #2"],["KSampler #2","LATENT","VAE Decode"],["Load VAE","VAE","VAE Decode"],["VAE Decode","IMAGE","Create Video → Save Video"]],
+                          set:{Resolution:"1280 × 720",Frames:"81 (≈5 s)",FPS:"16",Steps:"20 (10 + 10)",CFG:"3.5",Sampler:"euler / simple"},
+                          midSet:{Resolution:"832 × 480"},
+                          i2vNote:"Use the I2V files and template. Plug <b>Load Image</b> into the <code>start_image</code> input of <b>WanImageToVideo</b>.",
+                          prompt:"A slow dolly shot through a rainy neon alley at night, puddles reflecting pink and blue signs, steam rising from a vent, cinematic, shallow depth of field",
+                          negPrompt:"blurry, static, low quality, jpeg artifacts, watermark",
+                          cnPick:"fun14"
+                         }
+                        };
+                        const VID_PICK = {cpu:"cloud",v6:"wan13",v8:"wan5b",v12:"wan5b",v16:"wan14",v24:"wan14",m16:"wan13",m32:"wan5b"};
+                        const VID_CN = {
+                         vace13:{name:"Wan VACE 1.3B",files:[{f:"wan2.1_vace_1.3B_fp16.safetensors",dir:"diffusion_models",url:WAN21+"/diffusion_models",size:"4 GB",what:"VACE: video model that follows a control video"},UMT5,{f:"wan_2.1_vae.safetensors",dir:"vae",url:WAN21+"/vae",size:"0.25 GB",what:"VAE"}],
+                          how:["Open the template <b>Wan VACE Control Video</b> (Browse Templates → Video) and switch the model to the 1.3B file.","Load a short reference clip with <b>Load Video</b> (a person dancing, a camera move, etc.).","Turn it into a control video: install <b>comfyui_controlnet_aux</b> from the Manager, then run the frames through <b>DWPose Estimator</b> (copies body movement) or <b>Depth Anything V2</b> (copies shapes and camera motion).","Plug the result into the <code>control_video</code> input of <b>WanVaceToVideo</b>. Optionally add a <code>reference_image</code> to set the look of the character.","Match the frame count and size of the control video to your settings (832 × 480, 33–81 frames). Set strength to <code>1.0</code>."]},
+                         fun14:{name:"Wan 2.2 Fun Control 14B",files:[{f:"wan2.2_fun_control_high_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Control model, stage 1"},{f:"wan2.2_fun_control_low_noise_14B_fp8_scaled.safetensors",dir:"diffusion_models",url:WAN22+"/diffusion_models",size:"14.3 GB",what:"Control model, stage 2"}],
+                          how:["Open the template <b>Wan 2.2 14B Fun Control</b> (Browse Templates → Video). If any file is missing, the Desktop app offers to download it.","Load a reference clip with <b>Load Video</b>.","Make a control video from it: install <b>comfyui_controlnet_aux</b>, then use <b>DWPose Estimator</b> for movement, <b>Canny</b> for outlines, or <b>Depth Anything V2</b> for shape and camera motion.","Plug the control video into <b>Wan22FunControlToVideo</b>, and optionally a start image to set the look.","Keep resolution and frame count the same as your control clip."]}
+                        };
+
+                        /* ---------- MUSIC ---------- */
+                        const MUS = {name:"ACE-Step 1.5 Turbo", family:"ACE-Step 1.5",
+                         why:"Makes full songs with vocals and lyrics, or instrumentals, from a list of style tags. Very fast: under 10 seconds for a 4-minute song on an RTX 3090.",
+                         files:[{f:"ace_step_1.5_turbo_aio.safetensors",dir:"checkpoints",url:HF+"Comfy-Org/ace_step_1.5_ComfyUI_files/blob/main/checkpoints/ace_step_1.5_turbo_aio.safetensors",size:"",what:"All-in-one (model + text encoder + VAE)"}],
+                         splitFiles:[{f:"acestep_v1.5_turbo.safetensors",dir:"diffusion_models",url:HF+"Comfy-Org/ace_step_1.5_ComfyUI_files/blob/main/split_files/diffusion_models/acestep_v1.5_turbo.safetensors",size:"",what:"Music model"},{f:"qwen_0.6b_ace15.safetensors",dir:"text_encoders",url:HF+"Comfy-Org/ace_step_1.5_ComfyUI_files/blob/main/split_files/text_encoders/qwen_0.6b_ace15.safetensors",size:"",what:"Small text encoder (use this one on low memory)"},{f:"ace_1.5_vae.safetensors",dir:"vae",url:HF+"Comfy-Org/ace_step_1.5_ComfyUI_files/blob/main/split_files/vae/ace_1.5_vae.safetensors",size:"",what:"Audio VAE"}],
+                         template:"<b>ACE-Step 1.5 Music Generation AIO</b> (Browse Templates → Audio)",
+                         splitTemplate:"<b>ACE-Step 1.5 Music Generation Workflow</b> (the split-file version, Browse Templates → Audio)",
+                         graph:[["Load Checkpoint","MODEL","KSampler"],["Load Checkpoint","CLIP","Text Encode (tags + lyrics)"],["Text Encode","CONDITIONING","KSampler"],["Empty latent audio (set seconds)","LATENT","KSampler"],["KSampler","LATENT","VAE Decode Audio"],["Load Checkpoint","VAE","VAE Decode Audio"],["VAE Decode Audio","AUDIO","Save Audio"]],
+                         set:{Length:"30–120 s to start",Steps:"Template default (turbo ≈ 8)",CFG:"Template default",Seed:"Change it for a new take"}
+                        };
+
+                        /* ---------- model fit ---------- */
+                        const RANK={cpu:0,v6:1,v8:2,m16:2,v12:3,m32:3,v16:4,v24:5};
+                        const NEED={image:{sd15:0,sdxl:2,zit:3,flux:4},video:{wan13:1,wan5b:2,wan14:4}};
+                        const ORDER={image:["sd15","sdxl","zit","flux"],video:["wan13","wan5b","wan14"]};
+                        function fitOf(media,key){
+                          const r=RANK[S.tier], n=NEED[media][key];
+                          if(r>=n) return {cls:"good",txt:"Fits well"};
+                          if(r===n-1) return {cls:"slow",txt:"Runs, but slowly (borrows system RAM)"};
+                          return {cls:"bad",txt:"Probably too big for this computer"};
+                        }
+                        function chosenKey(){
+                          if(S.media==="image") return S.imgModel==="auto"?IMG_PICK[S.tier]:S.imgModel;
+                          if(S.media==="video") return S.vidModel==="auto"?VID_PICK[S.tier]:S.vidModel;
+                          return null;
+                        }
+                        function fitNote(media,key){
+                          const f=fitOf(media,key); if(f.cls==="good") return "";
+                          const ramTip=parseInt(S.ram)<32?" With your RAM setting it may fail; 32 GB or more of system RAM helps a lot.":"";
+                          return f.cls==="slow"
+                            ? `<b>Heads up:</b> this model is a little big for ${TIERS[S.tier].short}. ComfyUI will move part of it into system RAM, so expect it to be 2–4× slower. Use the smallest settings first.${ramTip}`
+                            : `<b>Heads up:</b> this model normally needs a lot more memory than ${TIERS[S.tier].short}. It will probably run out of memory or take a very long time. Look for a smaller GGUF version (install <b>ComfyUI-GGUF</b> from the Manager), or use a cloud GPU.${ramTip}`;
+                        }
+
+                        /* ---------- state ---------- */
+                        const MODES = {image:[["t2i","Text → image"],["i2i","Edit my picture"]],video:[["t2v","Text → video"],["i2v","Animate my picture"]],music:[["song","Song with vocals"],["inst","Instrumental"]]};
+                        let S = {media:"image",mode:"t2i",tier:"v8",ram:"16",lora:false,cn:false,imgModel:"auto",vidModel:"auto"};
+                        const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+                        let detected = {gpu:"",tier:null,os:"",cores:navigator.hardwareConcurrency||"?",mem:navigator.deviceMemory};
+
+                        function detect(){
+                          let r="";
+                          try{const c=document.createElement("canvas");const gl=c.getContext("webgl")||c.getContext("experimental-webgl");
+                            if(gl){const ext=gl.getExtension("WEBGL_debug_renderer_info");r=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);}}catch(e){}
+                          let clean=r;
+                          const m=/ANGLE \(([^,]+),\s*([^(]+?)(?:\s*\(0x[0-9a-f]+\))?\s*(?:Direct3D|OpenGL|Vulkan|Metal|,|\))/i.exec(r);
+                          if(m) clean=m[2].trim();
+                          detected.gpu=clean||"Not reported by this browser";
+                          const ua=navigator.userAgent;
+                          const p=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||"";
+                          detected.os=/win/i.test(p)||/Windows/.test(ua)?"Windows":/mac/i.test(p)||/Mac OS/.test(ua)?"macOS":/linux/i.test(p)?"Linux":/iPhone|iPad|Android/.test(ua)?"Mobile":"Unknown";
+                          for(const [re,t] of GPU){ if(re.test(clean)){detected.tier=t;break;} }
+                          if(!detected.tier && detected.os==="macOS" && /apple/i.test(r)) detected.tier="m16";
+                          if(detected.os==="Mobile") detected.tier=null;
+                        }
+                        function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+
+                        function renderDetect(){
+                          const d=document.getElementById("detect");
+                          const mem=detected.mem?(detected.mem>=8?"8 GB or more (browsers cap this at 8)":detected.mem+" GB"):"Not reported";
+                          d.innerHTML=`<dt>Graphics</dt><dd>${esc(detected.gpu)}</dd><dt>System</dt><dd>${esc(detected.os)}</dd><dt>CPU threads</dt><dd>${esc(detected.cores)}</dd><dt>RAM</dt><dd>${esc(mem)}</dd>`;
+                          const h=document.getElementById("tierHint");
+                          if(detected.os==="Mobile") h.textContent="You're on a phone or tablet. ComfyUI runs on a desktop or laptop, so choose that computer's graphics card below.";
+                          else if(detected.tier) h.innerHTML=`Best guess from your graphics card: <b>${TIERS[detected.tier].short}</b>. Change it if that's wrong (some cards come in two memory sizes).`;
+                          else h.textContent="Couldn't recognise the graphics card. Choose the closest option below.";
+                        }
+
+                        function wireColor(t){return {MODEL:"--w-model",CLIP:"--w-clip",CONDITIONING:"--w-cond",LATENT:"--w-latent",VAE:"--w-vae",IMAGE:"--w-image",AUDIO:"--w-audio",VIDEO:"--w-video"}[t]||"--muted"}
+                        function graphHTML(g){
+                          return `<div class="graph" role="list">${g.map(([a,t,b])=>`<div class="link" role="listitem"><span class="node">${esc(a)}</span><span class="wire" style="color:var(${wireColor(t)})">${t}</span><span class="node">${esc(b)}</span></div>`).join("")}</div>`;
+                        }
+                        function filesHTML(files){
+                          return `<div class="tablewrap"><table><thead><tr><th>File</th><th>Put it in</th><th>What it is</th><th>Size</th><th>Download</th></tr></thead><tbody>${files.map(x=>`<tr><td class="f">${esc(x.f)}</td><td class="f">ComfyUI/models/${esc(x.dir)}/</td><td>${esc(x.what)}</td><td class="size">${x.size||"—"}</td><td><a href="${x.url}" target="_blank" rel="noopener">Open</a></td></tr>`).join("")}</tbody></table></div>`;
+                        }
+                        function setHTML(s){return `<div class="settings">${Object.entries(s).map(([k,v])=>`<div class="set"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join("")}</div>`}
+                        function ul(a){return `<ul>${a.map(x=>`<li>${x}</li>`).join("")}</ul>`}
+                        function ol(a){return `<ol>${a.map(x=>`<li>${x}</li>`).join("")}</ol>`}
+
+                        /* ---------- install step ---------- */
+                        function installStep(){
+                          const t=S.tier; const mac=t[0]==="m";
+                          const amd=/radeon|amd|rx ?\d/i.test(detected.gpu)&&!mac&&t!=="cpu";
+                          let items=[];
+                          if(mac){
+                            items=["Download <b>ComfyUI Desktop for macOS</b> from <a href='https://www.comfy.org/download' target='_blank' rel='noopener'>comfy.org/download</a> (Apple Silicon M1 or newer).","Drag it to Applications, open it, and let it finish the first-run setup. It installs Python and everything else for you.","Choose a folder with plenty of free space for models. Plan for <b>50 GB or more</b>."];
+                          } else if(detected.os==="Linux"){
+                            items=["Install with git: <code>git clone https://github.com/comfyanonymous/ComfyUI</code>, then follow the README to install PyTorch for your card and run <code>python main.py</code>.","Open <code>http://127.0.0.1:8188</code> in your browser.","Install <b>ComfyUI-Manager</b> (instructions in the ComfyUI README) so you can add custom nodes with one click."];
+                          } else {
+                            items=["Download <b>ComfyUI Desktop for Windows</b> from <a href='https://www.comfy.org/download' target='_blank' rel='noopener'>comfy.org/download</a> and run the installer.","When asked, pick your GPU type and a folder with plenty of space. Plan for <b>50 GB or more</b> for models.","The Desktop app includes the <b>Manager</b> (the button that installs custom nodes and missing models). If you prefer the Portable zip version, it is on the same page."];
+                            if(t==="cpu") items.push("Choose <b>CPU</b> mode during setup. It works, but every job will be slow.");
+                          }
+                          if(amd) items.push("AMD card: ComfyUI's AMD support depends on your card and operating system. Check the AMD notes on the download page; Linux with ROCm is the most reliable route.");
+                          items.push("Learn three moves: <b>double-click</b> empty canvas to search for a node, <b>drag</b> from a coloured dot to connect a wire, and press <b>Run</b> (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>).");
+                          return {tag:"Setup",title:"Install ComfyUI",body:ol(items)};
+                        }
+
+                        /* ---------- builders ---------- */
+                        function buildImage(){
+                          const key=chosenKey(); const m=IMG[key]; const steps=[]; const manual=S.imgModel!=="auto";
+                          let files=[...m.files];
+                          steps.push(installStep());
+                          steps.push({tag:"Download",title:`Download ${m.name}`,body:`<p>${m.why}</p>${filesHTML(files)}<p class="hint">Civitai pages: click the <b>Download</b> button on the model page and save the <code>.safetensors</code> file. On Hugging Face, click the file then the download arrow. Restart ComfyUI or press <b>R</b> to refresh after adding files.</p>`});
+                          steps.push({tag:"Load",title:"Open the starter workflow",body:`<p>Use ${m.template}. In ComfyUI Desktop, templates can also download any missing model files for you.</p>`});
+                          let g=[...m.graph];
+                          if(S.mode==="i2i"){ g=g.map(r=>r[0].startsWith("Empty")?["Load Image → VAE Encode","LATENT","KSampler"]:r); }
+                          steps.push({tag:"Build",title:"Check how the nodes connect",body:`<p>Every wire carries one type of data. Colours match the dots in ComfyUI, and a wire only connects to an input of the same colour.</p>${graphHTML(g)}${S.mode==="i2i"?`<p>To edit your own picture: delete <b>${m.graph.find(r=>r[0].startsWith("Empty"))[0]}</b>, add <b>Load Image</b> → <b>VAE Encode</b> (connect the VAE too), and plug its LATENT into the KSampler.</p>`:""}`});
+                          const set={...m.set}; if(S.mode==="i2i") set.Denoise="0.5–0.65";
+                          steps.push({tag:"Settings",title:"Set the starting values",body:`${setHTML(set)}${S.mode==="i2i"?"<p>Denoise is how much the picture can change. 0.3 = small touch-ups, 0.7 = big changes, 1.0 = ignores your picture.</p>":""}`});
+                          steps.push({tag:"Prompt",title:"Write your prompt",body:`<p>Describe the subject, the setting, the light and the camera or art style. ${m.neg?"Put things you don't want in the second (negative) prompt.":"This model ignores the negative prompt at CFG 1, so put everything in the positive prompt and write full sentences."}</p><div class="prompt">${esc(m.prompt)}</div>${m.neg?`<p class="label">Negative</p><div class="prompt">${esc(m.negPrompt)}</div>`:""}`});
+                          if(S.lora){ const l=m.lora; steps.push({tag:"LoRA",title:"Add a LoRA",body:ol([`Find one on <a href="${l.where}" target="_blank" rel="noopener">Civitai</a> (already filtered to <b>${l.filter}</b>). A LoRA must match the base model or it won't work. Also check <a href="https://huggingface.co/models?other=lora" target="_blank" rel="noopener">Hugging Face</a>.`,`Save the <code>.safetensors</code> file into <code>ComfyUI/models/loras/</code>.`,l.wiring,`Set strength to <b>${l.strength}</b>. Too high and images get distorted.`,"Read the LoRA's page for its <b>trigger words</b> and add them to your prompt.","To stack two LoRAs, chain a second loader after the first and lower both strengths a little."])}); }
+                          if(S.cn){ const c=m.cn; steps.push({tag:"ControlNet",title:"Add ControlNet",body:`<p>ControlNet copies structure from a reference picture (edges, depth or a body pose) while your prompt sets the content and style.</p>${filesHTML(c.files)}${ol(c.how)}`}); }
+                          steps.push({tag:"Run",title:"Run and save",body:ul(["Press <b>Run</b>. Finished images save to <code>ComfyUI/output/</code>.","Change the <b>seed</b> for a new variation; set <code>control_after_generate</code> to <b>fixed</b> to keep one you like while you tweak the prompt.","Drag any PNG made by ComfyUI back onto the canvas: it reloads the whole workflow that made it."])});
+                          steps.push(troubleshoot("image"));
+                          return {title:`${m.name} on ${TIERS[S.tier].short}`,family:m.family,steps,alt:manual?"":IMG_ALT[S.tier],warn:fitNote("image",key),picked:manual,why:m.why};
+                        }
+
+                        function buildVideo(){
+                          const key=chosenKey(); const steps=[]; const manual=S.vidModel!=="auto";
+                          if(key==="cloud"){
+                            steps.push({tag:"Read first",title:"Video needs a graphics card",body:`<p>Video models do billions of calculations per frame. Without a dedicated GPU, a 2-second clip can take hours or fail. Two good routes:</p>${ul(["<b>Comfy Cloud</b> or a rented GPU (RunPod, Vast.ai, and similar) running ComfyUI. Pick a 24 GB card and follow the 24 GB recipe in this planner.","Make images on this computer first (choose Image above), then animate them later on a GPU machine."])}`});
+                            const v=VID.wan13; steps.push({tag:"If you try anyway",title:"Smallest model to try",body:`<p>${v.name}, 832 × 480, 17 frames. Expect a very long wait.</p>${filesHTML(v.files)}`});
+                            return {title:"Video on a computer without a GPU",family:"Cloud recommended",steps,alt:"",why:""};
+                          }
+                          const v=VID[key]; let files=[...v.files];
+                          if(S.mode==="i2v"&&v.i2vFiles) files=[...v.i2vFiles,...files.slice(2)];
+                          if(S.mode==="i2v"&&v.i2vSwap) files=[v.i2vSwap,...files.slice(1)];
+                          steps.push(installStep());
+                          steps.push({tag:"Download",title:`Download ${v.name}`,body:`<p>${v.why}</p>${filesHTML(files)}<p class="hint">The Hugging Face links open the folder; click the exact file name, then the download arrow.</p>`});
+                          steps.push({tag:"Load",title:"Open the starter workflow",body:`<p>Use ${v.template}.</p>`});
+                          steps.push({tag:"Build",title:"Check how the nodes connect",body:`${graphHTML(v.graph)}${S.mode==="i2v"?`<p>${v.i2vNote}</p>`:""}`});
+                          let set={...v.set};
+                          if(key==="wan5b"&&RANK[S.tier]<=2) Object.assign(set,v.lowSet);
+                          if(key==="wan14"&&RANK[S.tier]<=4) Object.assign(set,v.midSet);
+                          if(S.tier==="m16"||S.tier==="m32") set.Frames="33 (≈2 s) to start";
+                          if(key==="wan14"&&S.lora){ set.Steps="4 (2 + 2) with LightX2V"; set.CFG="1"; }
+                          steps.push({tag:"Settings",title:"Set the starting values",body:`${setHTML(set)}<p>Frame counts for Wan must be a multiple of 4 plus 1 (17, 33, 49, 81, 121). Make your first test short; double the length once it works.</p>${key==="wan14"?"<p>For the two KSampler (Advanced) nodes: #1 runs steps 0→10 with <code>add_noise</code> enabled and <code>return_with_leftover_noise</code> enabled; #2 runs steps 10→20 with both disabled. The template already sets this.</p>":""}`});
+                          steps.push({tag:"Prompt",title:"Write your prompt",body:`<p>Describe the scene <b>and</b> the movement: what moves, how the camera moves, the pace. ${S.mode==="i2v"?"For image-to-video, focus on motion; the picture already sets the look.":""}</p><div class="prompt">${esc(v.prompt)}</div><p class="label">Negative</p><div class="prompt">${esc(v.negPrompt)}</div>`});
+                          if(S.lora){
+                            const lb=[];
+                            if(key==="wan14") lb.push(`<b>Speed LoRA (recommended):</b> LightX2V 4-step LoRAs cut generation time by about 5×. Get the high-noise and low-noise versions that match your mode (T2V or I2V) from <a href="${WAN22}/loras" target="_blank" rel="noopener">Comfy-Org's Wan 2.2 loras folder</a>. Put each one on a <b>LoraLoaderModelOnly</b> after its matching model (high → high, low → low), strength <code>1.0</code>.`);
+                            lb.push(`<b>Style or motion LoRAs:</b> browse <a href="https://civitai.com/search/models?sortBy=models_v9&query=wan" target="_blank" rel="noopener">Civitai</a> and filter the base model to <b>${key==="wan13"?"Wan Video 1.3B":key==="wan5b"?"Wan Video 2.2 TI2V-5B":"Wan Video 2.2 T2V-A14B or I2V-A14B"}</b>.${key==="wan5b"?" There are fewer LoRAs for the 5B model than for 14B.":""}`);
+                            lb.push("Save files into <code>ComfyUI/models/loras/</code>, then add <b>LoraLoaderModelOnly</b> between <b>Load Diffusion Model</b> and <b>ModelSamplingSD3</b>.");
+                            lb.push("Start at strength <code>0.8–1.0</code> and use the trigger words from the LoRA's page.");
+                            steps.push({tag:"LoRA",title:"Add a LoRA",body:ol(lb)});
+                          }
+                          if(S.cn){
+                            const c=VID_CN[v.cnPick];
+                            steps.push({tag:"ControlNet",title:`Control the motion with ${c.name}`,body:`<p>Video models use their own control models instead of image ControlNets. They follow a <b>control video</b>: a pose skeleton, depth map or outline made from a reference clip.</p>${filesHTML(c.files)}${ol(c.how)}`});
+                          }
+                          steps.push({tag:"Run",title:"Run and save",body:ul(["Press <b>Run</b>. Videos save to <code>ComfyUI/output/</code> as MP4.","First run is slow because models load into memory. The second run is faster.",S.tier==="v8"||S.tier==="v6"||S.tier==="m16"?"If it's slow, close games, browsers with video, and other GPU apps while generating.":"Keep a short preview size until you like the motion, then raise resolution."])});
+                          steps.push(troubleshoot("video"));
+                          const alt={v6:"With 32 GB+ of system RAM you can also try Wan 2.2 5B; ComfyUI offloads what doesn't fit, at the cost of speed.",v8:"Want the 14B quality? Search Hugging Face for Wan 2.2 14B GGUF (Q3/Q4) files and install ComfyUI-GGUF from the Manager. It needs 32 GB+ system RAM.",v12:"Want 14B quality? Wan 2.2 14B in GGUF Q4 form plus the LightX2V 4-step LoRA runs on 12 GB with 32–64 GB system RAM.",v16:"16 GB runs 14B fp8 by offloading part of the model to system RAM. 64 GB of RAM is strongly recommended; with 32 GB, use 832 × 480.",v24:"You can also run LTX-2 and HunyuanVideo 1.5 from the templates if you want to compare.",m16:"Macs are slow at video. Keep clips short and small, or use a cloud GPU for longer clips.",m32:"Expect several minutes per 5-second clip on Apple Silicon."}[S.tier]||"";
+                          return {title:`${v.name} on ${TIERS[S.tier].short}`,family:v.family,steps,alt:manual?"":alt,warn:fitNote("video",key),picked:manual,why:v.why};
+                        }
+
+                        function buildMusic(){
+                          const steps=[]; const small=S.tier==="v6"||S.tier==="cpu"||S.tier==="m16";
+                          steps.push(installStep());
+                          steps.push({tag:"Download",title:`Download ${MUS.name}`,body:`<p>${MUS.why}</p>${filesHTML(small?MUS.splitFiles:MUS.files)}${small?"<p class='hint'>On your machine, use the split files with the small 0.6B text encoder. It needs less memory than the all-in-one file.</p>":"<p class='hint'>One file does everything. If you run low on memory later, the split files with the 0.6B text encoder are lighter.</p>"}`});
+                          steps.push({tag:"Load",title:"Open the starter workflow",body:`<p>Use ${small?MUS.splitTemplate:MUS.template}.</p>`});
+                          steps.push({tag:"Build",title:"Check how the nodes connect",body:graphHTML(MUS.graph)});
+                          steps.push({tag:"Settings",title:"Set the starting values",body:setHTML(MUS.set)});
+                          const lyr=S.mode==="song"?"[verse]\nStreetlights hum on an empty road\nI count the miles that I still owe\n\n[chorus]\nTake me home, take me slow\nThrough the rain and the radio":"[instrumental]";
+                          steps.push({tag:"Prompt",title:S.mode==="song"?"Write tags and lyrics":"Write tags for an instrumental",body:`<p>The <b>tags</b> box takes a comma-separated description: genre, instruments, mood, voice, tempo and key.</p><div class="prompt">${S.mode==="song"?"indie pop, female vocals, warm analog synths, jangly guitar, nostalgic, 104 bpm, A minor":"lo-fi hip hop, mellow electric piano, vinyl crackle, soft boom-bap drums, rainy night, 80 bpm"}</div><p>The <b>lyrics</b> box uses section labels in square brackets: <code>[verse]</code>, <code>[chorus]</code>, <code>[bridge]</code>, <code>[outro]</code>.${S.mode==="inst"?" For no vocals, use <code>[instrumental]</code> or leave it empty.":""}</p><div class="prompt">${esc(lyr)}</div><p>Write your own lyrics: don't paste lyrics from existing songs.</p>`});
+                          if(S.lora){ steps.push({tag:"LoRA",title:"Add a LoRA",body:ol(["Music LoRAs change genre or vocal style. Search <a href='https://huggingface.co/models?search=ace-step%20lora' target='_blank' rel='noopener'>Hugging Face for ACE-Step LoRAs</a> and check they are made for <b>ACE-Step 1.5</b>. LoRAs for version 1.0 won't match.","Save the file into <code>ComfyUI/models/loras/</code>.","Add <b>LoraLoaderModelOnly</b> between the model loader and the KSampler.","Start at strength <code>0.7</code> and add the LoRA's suggested tags.","ACE-Step 1.5 can also train your own LoRA inside ComfyUI from a handful of tracks you own the rights to."])}); }
+                          if(S.cn){ steps.push({tag:"ControlNet",title:"Steering music without ControlNet",body:`<p>ControlNet is for pictures and video; there's no ControlNet for music models. You steer ACE-Step with these instead:</p>${ul(["<b>Tempo and key</b> in the tags (<code>92 bpm</code>, <code>D major</code>) hold the song to a groove.","<b>Section labels</b> in the lyrics set the structure: where the chorus lands, where a bridge goes.","<b>Fixed seed</b>: keep the seed and change one tag at a time to hear what each word does.","<b>Length</b>: set the seconds to match the structure (about 30 s per verse + chorus).","Cover and repaint (re-singing or editing part of a song) aren't in ComfyUI for 1.5 yet."])}`}); }
+                          steps.push({tag:"Run",title:"Run and save",body:ul(["Press <b>Run</b>. Songs save to <code>ComfyUI/output/audio/</code>; you can play them in the Save Audio node.","Generate 4–5 takes with different seeds and keep the best. Fast models make this cheap.","For sound effects instead of songs, try the <b>Stable Audio Open</b> template."])});
+                          steps.push(troubleshoot("music"));
+                          return {title:`${MUS.name} on ${TIERS[S.tier].short}`,family:MUS.family,steps,alt:S.tier==="cpu"?"Music works on a CPU but expect several minutes per song.":"",why:MUS.why};
+                        }
+
+                        function troubleshoot(kind){
+                          const low=["cpu","v6","v8","m16"].includes(S.tier);
+                          const a=["<b>“Out of memory” / CUDA OOM:</b> lower the resolution"+(kind==="video"?" or frame count":"")+", close other apps, and restart ComfyUI. "+(low?"On your card, also try starting ComfyUI with <code>--lowvram</code> (Desktop: Settings → Server Config).":""),
+                           "<b>Red node / missing model:</b> the file is in the wrong folder or has a different name. Click the model box on the node and pick the file again.",
+                           "<b>Red node / missing node type:</b> open the <b>Manager</b> → <b>Install Missing Custom Nodes</b>, then restart.",
+                           "<b>Black or noisy output:</b> the VAE doesn't match the model. Use the VAE listed in the download table.",
+                           "<b>LoRA does nothing or breaks the image:</b> it was made for a different base model, or strength is too high."];
+                          if(parseInt(S.ram)<=16&&kind!=="music") a.push("<b>Very slow, or the computer freezes:</b> 16 GB of system RAM is tight for big models. Use smaller (fp8 or GGUF) versions, or upgrade to 32 GB.");
+                          return {tag:"Fixes",title:"If something goes wrong",body:ul(a)};
+                        }
+
+                        /* ---------- render ---------- */
+                        function render(){
+                          const plan = S.media==="image"?buildImage():S.media==="video"?buildVideo():buildMusic();
+                          const key=`done:${S.media}:${S.mode}:${S.tier}:${S.lora}:${S.cn}`;
+                          let done={}; try{done=JSON.parse(store.get(key)||"{}")}catch(e){}
+                          const el=document.getElementById("plan");
+                          const chips=[TIERS[S.tier].short+" VRAM",S.ram+" GB RAM",MODES[S.media].find(m=>m[0]===S.mode)[1]];
+                          if(S.lora) chips.push("+ LoRA"); if(S.cn) chips.push(S.media==="music"?"+ steering":"+ ControlNet");
+                          if(S.media!=="music") chips.push(plan.picked?"Your choice":"Recommended");
+                          el.innerHTML=`<section class="summary">
+                            <p class="label">Your recipe</p>
+                            <h2>${esc(plan.title)}</h2>
+                            <div class="chips">${chips.map(c=>`<span class="chip">${esc(c)}</span>`).join("")}<span class="chip">${esc(plan.family)}</span></div>
+                            ${plan.warn?`<div class="note">${plan.warn}</div>`:""}
+                            ${plan.alt?`<div class="note"><b>Also good to know:</b> ${plan.alt}</div>`:""}
+                            <div class="actions"><button class="btn" id="copy" type="button">Copy steps as text</button><button class="btn ghost" id="reset" type="button">Clear checkmarks</button><div class="bar" aria-hidden="true"><i id="barfill"></i></div><span class="progress" id="prog"></span></div>
+                          </section>
+                          <div class="legend" aria-label="Wire colour legend">${["MODEL","CLIP","CONDITIONING","LATENT","VAE","IMAGE","AUDIO"].map(t=>`<span class="wire" style="color:var(${wireColor(t)})">${t}</span>`).join("")}</div>
+                          ${plan.steps.map((s,i)=>`<article class="step${done[i]?" done":""}" data-i="${i}"><div class="num">${i+1}<input type="checkbox" id="ck-${i}" aria-label="Mark step ${i+1} done" ${done[i]?"checked":""}></div><div class="content"><span class="tag">${esc(s.tag)}</span><h3>${esc(s.title)}</h3>${s.body}</div></article>`).join("")}`;
+                          const upd=()=>{const n=plan.steps.length;const d=Object.values(done).filter(Boolean).length;document.getElementById("barfill").style.width=(d/n*100)+"%";document.getElementById("prog").textContent=`${d} of ${n} done`;};
+                          upd();
+                          el.querySelectorAll(".step input").forEach(cb=>cb.addEventListener("change",e=>{const i=e.target.closest(".step").dataset.i;done[i]=e.target.checked;e.target.closest(".step").classList.toggle("done",e.target.checked);store.set(key,JSON.stringify(done));upd();}));
+                          document.getElementById("reset").onclick=()=>{done={};store.set(key,"{}");render();};
+                          document.getElementById("copy").onclick=(ev)=>{
+                            const txt=[plan.title,""].concat([...el.querySelectorAll(".step")].map(a=>{const c=a.querySelector(".content").cloneNode(true);c.querySelectorAll("tr").forEach(r=>{r.append(" | ")});return `${parseInt(a.dataset.i)+1}. `+c.innerText.replace(/\n{3,}/g,"\n\n").trim();})).join("\n\n");
+                            const b=ev.currentTarget;
+                            const ok=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy steps as text",1800)};
+                            try{navigator.clipboard.writeText(txt).then(ok,()=>fallback(txt,b));}catch(e){fallback(txt,b)}
+                          };
+                          store.set("state",JSON.stringify(S));
+                          renderModelPicker();
+                        }
+                        function renderModelPicker(){
+                          const field=document.getElementById("modelField"), sel=document.getElementById("model"), hint=document.getElementById("fitHint");
+                          if(S.media==="music"){field.hidden=true;return;}
+                          field.hidden=false;
+                          const media=S.media, cat=media==="image"?IMG:VID, pick=media==="image"?IMG_PICK[S.tier]:VID_PICK[S.tier];
+                          const cur=media==="image"?S.imgModel:S.vidModel;
+                          const recName=pick==="cloud"?"cloud GPU suggested":cat[pick].name;
+                          sel.innerHTML=`<option value="auto">Recommended for this computer (${recName})</option>`+ORDER[media].map(k=>`<option value="${k}">${cat[k].name} — ${fitOf(media,k).txt}</option>`).join("");
+                          sel.value=cur;
+                          const key=chosenKey();
+                          if(key==="cloud") hint.textContent="No model fits well without a graphics card. Pick one anyway to see its recipe.";
+                          else { const f=fitOf(media,key); hint.innerHTML=`<span class="fit ${f.cls}">${f.txt}</span> on ${TIERS[S.tier].short}. ${cur==="auto"?"Choose another model to see its recipe instead.":""}`; }
+                        }
+                        function fallback(txt,b){const ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.append(ta);ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();b.textContent=ok?"Copied":"Copy blocked — select the text instead";setTimeout(()=>b.textContent="Copy steps as text",2200);}
+
+                        function renderControls(){
+                          document.querySelectorAll(".media button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.media===S.media));
+                          const m=document.getElementById("modes");
+                          m.innerHTML=MODES[S.media].map(([k,l])=>`<button type="button" data-mode="${k}" aria-pressed="${k===S.mode}">${l}</button>`).join("");
+                          m.querySelectorAll("button").forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;renderControls();render();});
+                          document.getElementById("tier").value=S.tier;
+                          document.getElementById("ram").value=S.ram;
+                          document.getElementById("optLora").checked=S.lora;
+                          document.getElementById("optCN").checked=S.cn;
+                          document.querySelector("label[for=optCN]");
+                        }
+
+                        /* init */
+                        detect();
+                        const sel=document.getElementById("tier");
+                        sel.innerHTML=Object.entries(TIERS).map(([k,v])=>`<option value="${k}">${v.label}${detected.tier===k?" — detected":""}</option>`).join("");
+                        try{const saved=JSON.parse(store.get("state")||"null");if(saved&&TIERS[saved.tier])S=Object.assign(S,saved);else if(detected.tier)S.tier=detected.tier;}catch(e){if(detected.tier)S.tier=detected.tier;}
+                        if(detected.mem&&detected.mem<8&&!store.get("state")) S.ram="8";
+                        if(S.tier==="m32") S.ram="32";
+                        renderDetect();
+                        document.querySelectorAll(".media button").forEach(b=>b.onclick=()=>{S.media=b.dataset.media;S.mode=MODES[S.media][0][0];renderControls();render();});
+                        sel.onchange=()=>{S.tier=sel.value;render();};
+                        document.getElementById("ram").onchange=e=>{S.ram=e.target.value;render();};
+                        document.getElementById("optLora").onchange=e=>{S.lora=e.target.checked;render();};
+                        document.getElementById("model").onchange=e=>{if(S.media==="image")S.imgModel=e.target.value;else S.vidModel=e.target.value;render();};
+                        if(!S.imgModel||(S.imgModel!=="auto"&&!IMG[S.imgModel]))S.imgModel="auto";
+                        if(!S.vidModel||(S.vidModel!=="auto"&&!VID[S.vidModel]))S.vidModel="auto";
+                        document.getElementById("optCN").onchange=e=>{S.cn=e.target.checked;render();};
+                        renderControls(); render();
+                        })();
+                </script>
+        </body>
 </html>
